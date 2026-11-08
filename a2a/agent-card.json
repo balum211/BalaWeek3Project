@@ -1,0 +1,37 @@
+{
+  "name": "CodeSentinel",
+  "description": "Multi agent code reviewer. An orchestrator delegates to bug, security and test coverage specialists and returns a prioritised review report with severity ratings. Read only: it never modifies code or posts on its own.",
+  "version": "1.0.0",
+  "url": "http://localhost:8765/a2a",
+  "provider": { "organization": "Bala Week 3 project, The Gen Academy" },
+  "capabilities": { "streaming": true, "pushNotifications": false, "stateTransitionHistory": true },
+  "defaultInputModes": ["text/plain", "application/json"],
+  "defaultOutputModes": ["text/markdown", "application/json"],
+  "skills": [
+    {
+      "id": "review_code",
+      "name": "Review source code",
+      "description": "Runs the bug, security and test agents in parallel on one or more files and returns a report with a verdict (approve, request changes, block), a quality score and ranked findings.",
+      "tags": ["code-review", "security", "testing", "python"],
+      "examples": ["Review this Flask handler for security issues", "Which functions in payments.py need tests?"],
+      "inputModes": ["text/plain", "application/json"],
+      "outputModes": ["text/markdown", "application/json"]
+    },
+    {
+      "id": "review_github",
+      "name": "Review a GitHub pull request",
+      "description": "Fetches the changed files of a public pull request and reviews them. Posting the result back is a separate, human approved action and is not exposed over A2A.",
+      "tags": ["github", "pull-request"],
+      "examples": ["https://github.com/owner/repo/pull/42"]
+    },
+    {
+      "id": "scan_security",
+      "name": "Deterministic security scan",
+      "description": "Fast rule based scan with CWE ids, no LLM involved.",
+      "tags": ["sast", "cwe"]
+    }
+  ],
+  "securitySchemes": { "bearer": { "type": "http", "scheme": "bearer" } },
+  "security": [{ "bearer": [] }],
+  "x-task-lifecycle": "submitted -> working -> input-required (human approval) -> completed | rejected | failed"
+}

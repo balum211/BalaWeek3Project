@@ -1,0 +1,15 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+data/
+reports/
+outbox/
+.claude/settings.local.json
+*.sqlite
+*.sqlite-*
+.DS_Store
+Thumbs.db
+~$*.docx
+.claude/

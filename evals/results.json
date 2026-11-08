@@ -1,0 +1,133 @@
+{
+  "mode": "Static analysis only (no LLM key found)",
+  "seeded": [
+    {
+      "sample": "flask_user_api",
+      "seeded": 12,
+      "found": 12,
+      "recall": 1.0,
+      "llm_only_total": 3,
+      "llm_only_found": 0,
+      "precision": 1.0,
+      "findings": 21,
+      "verdict": "block",
+      "score": 5,
+      "seconds": 0.27,
+      "missed": [],
+      "agent_modes": {
+        "bugs": "static/ok",
+        "security": "static/ok",
+        "tests": "static/ok"
+      }
+    },
+    {
+      "sample": "inventory_pipeline",
+      "seeded": 12,
+      "found": 12,
+      "recall": 1.0,
+      "llm_only_total": 2,
+      "llm_only_found": 0,
+      "precision": 1.0,
+      "findings": 21,
+      "verdict": "request_changes",
+      "score": 27,
+      "seconds": 0.15,
+      "missed": [],
+      "agent_modes": {
+        "bugs": "static/ok",
+        "security": "static/ok",
+        "tests": "static/ok"
+      }
+    },
+    {
+      "sample": "payments_service",
+      "seeded": 7,
+      "found": 7,
+      "recall": 1.0,
+      "llm_only_total": 3,
+      "llm_only_found": 0,
+      "precision": 1.0,
+      "findings": 7,
+      "verdict": "block",
+      "score": 22,
+      "seconds": 0.12,
+      "missed": [],
+      "agent_modes": {
+        "bugs": "static/ok",
+        "security": "static/ok",
+        "tests": "static/ok"
+      }
+    }
+  ],
+  "real_world": [
+    {
+      "url": "https://github.com/fportantier/vulpy/blob/master/bad/libuser.py",
+      "lines": 61,
+      "findings": 9,
+      "counts": {
+        "critical": 3,
+        "high": 0,
+        "medium": 0,
+        "low": 6,
+        "info": 0
+      },
+      "verdict": "block",
+      "score": 30,
+      "seconds": 0.87,
+      "report": "sample_outputs/realworld_fportantier_vulpy_bad_libuser.md",
+      "top": [
+        "critical: SQL built from string formatting (line 12)",
+        "critical: SQL built from string formatting (line 25)",
+        "critical: SQL built from string formatting (line 53)",
+        "low: No test files supplied (line 1)",
+        "low: Public function has no test (line 5)"
+      ]
+    },
+    {
+      "url": "https://github.com/anxolerd/dvpwa/blob/master/sqli/dao/student.py",
+      "lines": 47,
+      "findings": 6,
+      "counts": {
+        "critical": 1,
+        "high": 0,
+        "medium": 1,
+        "low": 4,
+        "info": 0
+      },
+      "verdict": "block",
+      "score": 59,
+      "seconds": 0.83,
+      "report": "sample_outputs/realworld_anxolerd_dvpwa_sqli_dao_student.md",
+      "top": [
+        "critical: SQL built from string formatting (line 42)",
+        "medium: Public function has no test (line 25)",
+        "low: No test files supplied (line 1)",
+        "low: Public function has no test (line 11)",
+        "low: Public function has no test (line 15)"
+      ]
+    },
+    {
+      "url": "https://github.com/we45/Vulnerable-Flask-App/blob/master/app/app.py",
+      "lines": 339,
+      "findings": 26,
+      "counts": {
+        "critical": 4,
+        "high": 2,
+        "medium": 8,
+        "low": 12,
+        "info": 0
+      },
+      "verdict": "block",
+      "score": 7,
+      "seconds": 1.01,
+      "report": "sample_outputs/realworld_we45_Vulnerable-Flask-App_app_app.md",
+      "top": [
+        "critical: Hardcoded secret (line 27)",
+        "critical: Hardcoded secret (line 63)",
+        "critical: JWT signature not verified (line 97)",
+        "critical: SQL built from string formatting (line 261)",
+        "high: Weak hash algorithm (line 141)"
+      ]
+    }
+  ]
+}

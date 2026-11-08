@@ -1,0 +1,62 @@
+{
+  "flask_user_api": {
+    "description": "Loyalty portal API with seeded web security flaws",
+    "issues": [
+      {"line": 13, "rules": ["S003"], "what": "Hardcoded Flask SECRET_KEY"},
+      {"line": 14, "rules": ["S003"], "what": "Hardcoded Stripe live key"},
+      {"line": 25, "rules": ["S006"], "what": "MD5 used for password hashing"},
+      {"line": 32, "rules": ["S011"], "what": "Password written to logs"},
+      {"line": 34, "rules": ["S004"], "what": "SQL injection in login (f-string)"},
+      {"line": 36, "rules": ["B003"], "what": "row == None"},
+      {"line": 44, "rules": ["S004"], "what": "SQL injection in get_user (% formatting)"},
+      {"line": 51, "rules": ["S009"], "what": "Reset token from random"},
+      {"line": 61, "rules": ["S005"], "what": "pickle.loads on a cookie"},
+      {"line": 68, "rules": ["S010"], "what": "Path traversal in download"},
+      {"line": 74, "rules": ["S001"], "what": "eval of a query parameter"},
+      {"line": 78, "rules": ["S008"], "what": "Flask debug=True on 0.0.0.0"}
+    ],
+    "llm_only": [
+      {"line": 42, "keywords": ["auth", "idor", "ownership", "access control", "any user"], "what": "get_user has no authorization (IDOR)"},
+      {"line": 45, "keywords": ["none", "404", "not found", "typeerror"], "what": "get_user crashes when the row is missing"},
+      {"line": 72, "keywords": ["auth", "admin", "access"], "what": "Admin endpoint has no authentication"}
+    ]
+  },
+  "inventory_pipeline": {
+    "description": "Nightly inventory sync with seeded correctness bugs",
+    "issues": [
+      {"line": 12, "rules": ["B002"], "what": "Mutable default headers={}"},
+      {"line": 13, "rules": ["B013"], "what": "requests.get without timeout"},
+      {"line": 18, "rules": ["B004"], "what": "open() without a context manager"},
+      {"line": 25, "rules": ["B007"], "what": "is \"\" identity comparison"},
+      {"line": 26, "rules": ["B012"], "what": "List mutated while iterating"},
+      {"line": 27, "rules": ["B003"], "what": "== None"},
+      {"line": 35, "rules": ["B011"], "what": "float for money"},
+      {"line": 43, "rules": ["B001"], "what": "Bare except: pass"},
+      {"line": 52, "rules": ["B008"], "what": "return in finally"},
+      {"line": 55, "rules": ["B005"], "what": "reconcile is too complex"},
+      {"line": 75, "rules": ["B009"], "what": "global mutable state"},
+      {"line": 76, "rules": ["B010"], "what": "TODO left in code"}
+    ],
+    "llm_only": [
+      {"line": 57, "keywords": ["quadratic", "o(n", "nested loop", "dictionary", "lookup"], "what": "reconcile is O(n*m)"},
+      {"line": 79, "keywords": ["infinite", "max", "page", "loop", "retry"], "what": "Pagination loop has no upper bound"}
+    ]
+  },
+  "payments_service": {
+    "description": "Checkout refunds module with partial tests",
+    "issues": [
+      {"line": 8, "rules": ["S003"], "what": "Hardcoded JWT signing key"},
+      {"line": 29, "rules": ["S001"], "what": "eval of a marketing rule"},
+      {"line": 33, "rules": ["S012"], "what": "JWT decoded without signature verification"},
+      {"line": 50, "rules": ["S002"], "what": "Shell injection in export_receipt"},
+      {"line": 26, "rules": ["T001"], "what": "apply_discount untested"},
+      {"line": 32, "rules": ["T001"], "what": "refund untested (5 error paths)"},
+      {"line": 49, "rules": ["T001"], "what": "export_receipt untested"}
+    ],
+    "llm_only": [
+      {"line": 44, "keywords": ["float", "equal", "precision", "decimal"], "what": "Float equality decides refund status"},
+      {"line": 54, "keywords": ["round", "cent", "remainder", "sum"], "what": "split_payment loses cents"},
+      {"line": 20, "keywords": ["float", "decimal", "money"], "what": "Money stored as float"}
+    ]
+  }
+}
