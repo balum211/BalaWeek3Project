@@ -2,7 +2,7 @@
 
 **Week 3 project, Mastering Agentic AI (The Gen Academy).** Use case **3E, Code Review Agent**, built on the **code track (LangChain + LangGraph)** with a Streamlit interface.
 
-**Live app:** https://balaweek3project-codesentinel.streamlit.app/ (runs in rule based mode with no API key; add `NEBIUS_API_KEY` in the app's Secrets to switch on the LLM agents)
+**Live app:** https://balaweek3project-codesentinel.streamlit.app/ (LLM agents on with Nebius Llama 3.3 70B through the app's Secrets; without the secret it runs in rule based mode)
 
 > **One liner.** CodeSentinel helps a software engineer or tech lead review a pull request in a web app, replacing the 30 to 45 minutes of manual line by line review and security checklist work it takes today. It finds bugs, security vulnerabilities and test gaps on its own using 3 specialist agents and 6 read only tools, hands off to a human before the plan runs and before anything is posted, saved to memory or shared, and I'll know it works when a reviewer gets a prioritised, grounded review in under 2 minutes that catches at least 9 out of 10 seeded issues.
 
@@ -117,7 +117,9 @@ docs/                        project documentation, demo script, architecture di
 
 ## Design
 
-The Streamlit UI follows the visual system from [elayadesign/ai-design-skills](https://github.com/elayadesign/ai-design-skills) (`landing-page-design`, Part B): Geist type on named text styles, the fixed spacing scale, nested radius rule, flat dark surfaces, hero gradient text, Phosphor icons, a weighted easing curve with reduced motion support, skeleton loaders instead of spinners, composed empty states and calm, specific system messages. See `codesentinel/ui_style.py`.
+The Streamlit UI follows the visual system from [elayadesign/ai-design-skills](https://github.com/elayadesign/ai-design-skills) (`landing-page-design`, Part B): Geist type on named text styles, the fixed spacing scale, nested radius rule, flat dark surfaces, hero gradient text, Phosphor icons, a weighted easing curve with reduced motion support, skeleton loaders instead of spinners, composed empty states and calm, specific system messages.
+
+On top of that it uses the glass and 3D layer from our Team 24 LaneRoom app: a navy base with aurora light, a perspective grid floor and floating spheres, translucent glass panels, a hero card with a 3D tilted report preview that scans code, a pipeline strip that lights up each graph node from the checkpoint (done, waiting for you, skipped), a branded sidebar and pill tabs. The accent is teal because orange already means high severity. See `codesentinel/ui_style.py`.
 
 ## Hard limits
 

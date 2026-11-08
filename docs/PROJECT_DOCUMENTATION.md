@@ -63,7 +63,7 @@ The system is one LangGraph `StateGraph` with seven nodes:
 | `evals/ground_truth.json` | Line level ground truth for all three samples, split into static detectable and LLM only issues. |
 | Real open source code from GitHub | `fportantier/vulpy` (bad/libuser.py), `anxolerd/dvpwa` (sqli/dao/student.py), `we45/Vulnerable-Flask-App` (app/app.py). Intentionally vulnerable teaching projects, fetched live through the GitHub tool. |
 | Week 3 course materials | Session 1 and 2 repositories and handouts, glossary, Mem0, caching, A2A, HITL vs HOTL and agent memory handouts, used to choose the architecture and controls. |
-| Design system | `elayadesign/ai-design-skills`, `landing-page-design` Part B, applied to the Streamlit UI. |
+| Design system | `elayadesign/ai-design-skills`, `landing-page-design` Part B, applied to the Streamlit UI, plus the glass and 3D visual layer of our Team 24 LaneRoom app (https://team24-logisticslanedealroom.streamlit.app/). |
 
 ## 4. How I used AI coding tools
 
@@ -86,6 +86,14 @@ From that prompt, Claude Code worked through the build plan below, which I revie
 7. "Build an eval harness with ground truth for the seeded samples, and also run it against real vulnerable open source code from GitHub."
 8. "Apply the ai-design-skills visual system to Streamlit: Geist, spacing tokens, flat dark surfaces, hero gradient text, Phosphor icons, skeleton loaders, and no hyphens in UI copy."
 
+Follow up prompts after the first version:
+
+> Can you make more rich look using ai-designskills https://github.com/elayadesign/ai-design-skills and make this streamlit app publically available, I have to submit this project today
+
+> can you check this app https://team24-logisticslanedealroom.streamlit.app/ and understand, apply similar design skills to this streamlit app
+
+> Can you update documents and send me to my local drive for submission
+
 ## 5. Iterations tried
 
 | Iteration | What happened | Change |
@@ -100,6 +108,10 @@ From that prompt, Claude Code worked through the build plan below, which I revie
 | 8. Eval credit | The eval gave LLM credit to a static finding that happened to contain a keyword. | LLM only issues now count only for findings whose source includes the LLM. |
 | 9. UI copy and rendering | `__eq__` rendered as bold "eq" in Markdown; the hero heading broke awkwardly. | Code spans in rule text; explicit hero line breaks per the design skill. |
 | 10. Automatic runs | The report footer claimed a human approved it even for MCP runs. | Footer now states who approved, or that it is an automatic read only report. |
+| 11. Richer landing page | The first UI was a plain dashboard. | Rebuilt as a landing page per the design skill: floating nav, hero with a live looking report preview, proof stats, how it works, word by word tagline reveal, benefits, FAQ, final call to action and footer. |
+| 12. Public deployment | Reviewers needed to use the app without installing anything. | Deployed on Streamlit Community Cloud from `main`. With no key it runs in rule based mode; adding `NEBIUS_API_KEY` in the app's Secrets switches on the LLM agents. The first Secrets attempt failed because TOML needs the value in quotes. |
+| 13. Glass and 3D layer | Matched the look of our Team 24 LaneRoom app after reading its stylesheet. | Navy base with aurora light, a perspective grid floor and floating spheres; glass panels; hero card with chips and a 3D tilted preview that scans code; a pipeline strip that lights up each graph node from the checkpoint; branded sidebar; pill tabs. Teal accent, because orange already means high severity. |
+| 14. Streamlit tab markup | The pill tab style did not apply on the installed Streamlit, which renders tabs with React Aria. | Added selectors for `stTab` and `role=tablist`. Entrance animations use `backwards` fill so hover lifts still work. |
 
 ## 6. Results
 
@@ -115,6 +127,12 @@ Real open source code (GitHub, live fetch): vulpy `libuser.py` blocked with 3 cr
 
 LLM mode: the LLM path (tool calls, grounding, fallback, JSON repair, caching) is covered by scripted fake model tests. Running `uv run python evals/run_evals.py` with a Nebius key fills in the "LLM only" column for the 8 semantic issues.
 
+### Live deployment
+
+* Public app: https://balaweek3project-codesentinel.streamlit.app/ (Streamlit Community Cloud, branch `main`, `app.py`).
+* LLM agents on: the app's Secrets hold `NEBIUS_API_KEY`, so the sidebar shows **LLM agents on** with Nebius `meta-llama/Llama-3.3-70B-Instruct`. Without the secret the same app runs in rule based mode.
+* Every push to `main` redeploys automatically. Checkpoints, memory and caches live in the app's local SQLite files, so they reset when Streamlit Cloud restarts the container.
+
 ## 7. Learnings and observations
 
 1. **Control flow is the product.** The prompts were the easy part. The value came from deciding which steps are code, which are model driven, and where the graph pauses.
@@ -125,6 +143,7 @@ LLM mode: the LLM path (tool calls, grounding, fallback, JSON repair, caching) i
 6. **Caching is about correctness too.** Keys include the prompt version, model and code hash, so a prompt change invalidates old answers. Short TTLs for live GitHub data, long ones for pure functions.
 7. **Checkpoints make HITL practical.** With `SqliteSaver` and the thread id in the URL, a reviewer can close the tab at the approval step and come back later.
 8. **MCP and A2A are distribution.** The same graph serves the Streamlit app, Claude Desktop through MCP, and other agents through the A2A card, with writes still locked behind the human step.
+9. **Design is part of trust.** A pipeline strip that shows which node ran and where the graph is waiting for a human makes the HITL design visible to the reviewer, not just to the developer.
 
 ## 8. How to run
 

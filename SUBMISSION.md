@@ -10,6 +10,13 @@ Submission form: https://forms.gle/waBYFkkf5xxmcouV9 · Final certification dead
 | Video demo (5 minutes or less) | Record with Loom following the script, paste the share link | `docs/DEMO_VIDEO_SCRIPT.md` |
 | Sample output | Included in the repo | `sample_outputs/`, `evals/results.md` |
 
+## Form answers you can reuse (links)
+
+* GitHub: https://github.com/balum211/BalaWeek3Project
+* Live app: https://balaweek3project-codesentinel.streamlit.app/
+* Google Doc: upload `CodeSentinel_Week3_Project_Documentation.docx`, open with Google Docs, share as "Anyone with the link can view"
+* Video: your Loom link (5 minutes or less)
+
 ## Before recording the demo
 
 1. `uv sync`

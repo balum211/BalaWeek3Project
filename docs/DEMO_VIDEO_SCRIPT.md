@@ -1,6 +1,6 @@
 # Demo video script (under 5 minutes)
 
-Record the screen with Loom (already installed) at 1080p. Have the app running (`uv run streamlit run app.py`) with your Nebius key in `.env` if you want LLM mode, and VS Code open on the repository.
+Record the screen with Loom (already installed) at 1080p. Use the live app at https://balaweek3project-codesentinel.streamlit.app/ (LLM agents on), or run it locally with `uv run streamlit run app.py` and your Nebius key in `.env`. Keep VS Code open on the repository.
 
 Before recording: delete `data/` once so the memory and cache start empty, and run one review in advance so you know the timings.
 
@@ -8,7 +8,7 @@ Before recording: delete `data/` once so the memory and cache start empty, and r
 
 ## 0:00 to 0:30 · Intro and the problem
 
-**Show:** the app's hero section.
+**Show:** the live app's hero: the 3D tilted report preview with the scan line, then the sidebar showing **LLM agents on**.
 
 **Say:** "Hi, I'm Bala. For Week 3 I built CodeSentinel, use case 3E, a multi agent code review system on the LangGraph code track. Code review takes 30 to 45 minutes per pull request, and security and test gaps are what get skipped under pressure. CodeSentinel runs three specialist agents in parallel, and nothing is posted or remembered until a human approves it."
 
@@ -22,7 +22,7 @@ Before recording: delete `data/` once so the memory and cache start empty, and r
 
 **Show:** Review tab, pick "Loyalty portal API (Flask)", click Run review.
 
-**Say while it runs:** "Watch the steps stream in. The first pause is plan approval. I can remove an agent or add a focus area. I'll add 'check authorization on every route' and approve."
+**Say while it runs:** "Watch the steps stream in, and the pipeline strip above lights up each graph node as it finishes. The first pause is plan approval. I can remove an agent or add a focus area. I'll add 'check authorization on every route' and approve."
 
 **Show:** the report: score, Blocked verdict, the critical callout, expand the SQL injection finding (evidence, CWE, fix), expand a test finding (suggested pytest).
 
@@ -56,4 +56,4 @@ Before recording: delete `data/` once so the memory and cache start empty, and r
 
 **Show:** `docs/PROJECT_DOCUMENTATION.md` section 4 and 5.
 
-**Say:** "I built this with Claude Code. I gave it all the Week 3 materials, and we iterated: turning single prompt agents into ReAct agents, adding the grounding guard, fixing duplicate findings and a JWT rule that double counted, and changing the scoring curve. The UI follows the ai-design-skills design system. The biggest lesson: control flow and human checkpoints are the product, and important rules belong in code. Thanks for watching."
+**Say:** "I built this with Claude Code. I gave it all the Week 3 materials, and we iterated: turning single prompt agents into ReAct agents, adding the grounding guard, fixing duplicate findings and a JWT rule that double counted, and changing the scoring curve. The UI follows the ai-design-skills design system with the glass and 3D layer from our team's LaneRoom app, and it is deployed publicly on Streamlit Cloud. The biggest lesson: control flow and human checkpoints are the product, and important rules belong in code. Thanks for watching."
