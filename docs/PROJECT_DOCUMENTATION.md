@@ -63,7 +63,7 @@ The system is one LangGraph `StateGraph` with seven nodes:
 | `evals/ground_truth.json` | Line level ground truth for all three samples, split into static detectable and LLM only issues. |
 | Real open source code from GitHub | `fportantier/vulpy` (bad/libuser.py), `anxolerd/dvpwa` (sqli/dao/student.py), `we45/Vulnerable-Flask-App` (app/app.py). Intentionally vulnerable teaching projects, fetched live through the GitHub tool. |
 | Week 3 course materials | Session 1 and 2 repositories and handouts, glossary, Mem0, caching, A2A, HITL vs HOTL and agent memory handouts, used to choose the architecture and controls. |
-| Design system | `elayadesign/ai-design-skills`, `landing-page-design` Part B, applied to the Streamlit UI, plus the glass and 3D visual layer of our Team 24 LaneRoom app (https://team24-logisticslanedealroom.streamlit.app/). |
+| Design system | `elayadesign/ai-design-skills`, both skills (`figma-designer` tokens, button states and Foundations; `landing-page-design` flat surfaces, hero and states), applied to the Streamlit UI. |
 
 ## 4. How I used AI coding tools
 
@@ -94,6 +94,8 @@ Follow up prompts after the first version:
 
 > Can you update documents and send me to my local drive for submission
 
+> Can you use any other design skills from https://github.com/elayadesign/ai-design-skills, since i used Team24 project
+
 ## 5. Iterations tried
 
 | Iteration | What happened | Change |
@@ -112,6 +114,7 @@ Follow up prompts after the first version:
 | 12. Public deployment | Reviewers needed to use the app without installing anything. | Deployed on Streamlit Community Cloud from `main`. With no key it runs in rule based mode; adding `NEBIUS_API_KEY` in the app's Secrets switches on the LLM agents. The first Secrets attempt failed because TOML needs the value in quotes. |
 | 13. Glass and 3D layer | Matched the look of our Team 24 LaneRoom app after reading its stylesheet. | Navy base with aurora light, a perspective grid floor and floating spheres; glass panels; hero card with chips and a 3D tilted preview that scans code; a pipeline strip that lights up each graph node from the checkpoint; branded sidebar; pill tabs. Teal accent, because orange already means high severity. |
 | 14. Streamlit tab markup | The pill tab style did not apply on the installed Streamlit, which renders tabs with React Aria. | Added selectors for `stTab` and `role=tablist`. Entrance animations use `backwards` fill so hover lifts still work. |
+| 15. Own design system | The look was borrowed from another team's app. | Replaced it with a design built only from the two skills: Core Colors and a semantic Color System with Dark and Light modes, a violet accent, flat surfaces, a bento hero and zig-zag how it works, 5 × 5 button states (Reject is Error, Clear caches is Warning) and a Design system tab with the Foundations frame. The Warning hover failed contrast (3.9:1), so it moved to a darker yellow (6.4:1). |
 
 ## 6. Results
 
