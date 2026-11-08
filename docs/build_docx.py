@@ -1,11 +1,13 @@
 """Convert docs/PROJECT_DOCUMENTATION.md into a .docx for Google Docs import.
 
     uv run python docs/build_docx.py
+    uv run python docs/build_docx.py docs/PRESENTATION_NOTES.md docs/CodeSentinel_Presentation_Notes.docx
 """
 
 from __future__ import annotations
 
 import re
+import sys
 from pathlib import Path
 
 from docx import Document
@@ -124,4 +126,6 @@ def build():
 
 
 if __name__ == "__main__":
+    if len(sys.argv) == 3:
+        SRC, OUT = Path(sys.argv[1]).resolve(), Path(sys.argv[2]).resolve()
     build()
