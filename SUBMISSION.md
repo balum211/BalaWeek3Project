@@ -5,6 +5,7 @@ Submission form: https://forms.gle/waBYFkkf5xxmcouV9 · Final certification dead
 | Deliverable | What to submit | Where it is |
 |---|---|---|
 | Code base | GitHub link | https://github.com/balum211/BalaWeek3Project |
+| Live app | Public Streamlit link | https://balaweek3project-codesentinel.streamlit.app/ |
 | Project documentation (Google Doc) | Upload `docs/CodeSentinel_Week3_Project_Documentation.docx` to Google Drive, open it with Google Docs, set sharing to "Anyone with the link can view", paste the link | `docs/CodeSentinel_Week3_Project_Documentation.docx` (Markdown source: `docs/PROJECT_DOCUMENTATION.md`) |
 | Video demo (5 minutes or less) | Record with Loom following the script, paste the share link | `docs/DEMO_VIDEO_SCRIPT.md` |
 | Sample output | Included in the repo | `sample_outputs/`, `evals/results.md` |

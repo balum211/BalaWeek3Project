@@ -2,6 +2,8 @@
 
 **Week 3 project, Mastering Agentic AI (The Gen Academy).** Use case **3E, Code Review Agent**, built on the **code track (LangChain + LangGraph)** with a Streamlit interface.
 
+**Live app:** https://balaweek3project-codesentinel.streamlit.app/ (runs in rule based mode with no API key; add `NEBIUS_API_KEY` in the app's Secrets to switch on the LLM agents)
+
 > **One liner.** CodeSentinel helps a software engineer or tech lead review a pull request in a web app, replacing the 30 to 45 minutes of manual line by line review and security checklist work it takes today. It finds bugs, security vulnerabilities and test gaps on its own using 3 specialist agents and 6 read only tools, hands off to a human before the plan runs and before anything is posted, saved to memory or shared, and I'll know it works when a reviewer gets a prioritised, grounded review in under 2 minutes that catches at least 9 out of 10 seeded issues.
 
 ![Architecture](docs/architecture.png)

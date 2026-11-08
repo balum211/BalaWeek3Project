@@ -5,6 +5,7 @@
 **Use case:** 3E, Code Review Agent
 **Build track:** Track 2, code heavy with LangChain + LangGraph, Streamlit interface
 **Repository:** https://github.com/balum211/BalaWeek3Project
+**Live app:** https://balaweek3project-codesentinel.streamlit.app/
 
 ## 1. Project overview
 
