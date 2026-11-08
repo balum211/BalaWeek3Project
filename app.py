@@ -61,8 +61,9 @@ FAQ = [
 ]
 
 st.set_page_config(page_title="CodeSentinel · multi agent code review", page_icon="🛡️", layout="wide",
-                   initial_sidebar_state="collapsed")
+                   initial_sidebar_state="auto")
 st.markdown(ui.CSS, unsafe_allow_html=True)
+st.markdown(ui.BACKGROUND, unsafe_allow_html=True)
 
 
 @st.cache_resource
@@ -138,19 +139,19 @@ def run_stream(payload) -> None:
 
 # ------------------------------------------------------------------ sidebar (system status)
 with st.sidebar:
-    st.markdown('<div class="title-3"><i class="ph-fill ph-shield-check" style="color:var(--accent)"></i> System status</div>',
-                unsafe_allow_html=True)
-    rows = [("Model", provider_label(settings.provider))]
+    st.markdown(ui.brand(), unsafe_allow_html=True)
+    st.markdown(f'<span class="cs-chip {"ok" if settings.llm_enabled else "warn"}"><i class="ph-fill ph-circle"></i>'
+                f'{html.escape(mode_label)}</span>', unsafe_allow_html=True)
+    rows = [("ph-cpu", "Model", provider_label(settings.provider))]
     if settings.fallback_provider:
-        rows.append(("Fallback model", provider_label(settings.fallback_provider)))
-    rows += [("Memory", memory.backend),
-             ("GitHub posting", "Token found" if settings.github_token else "No token, comments go to the outbox folder"),
-             ("Checkpoints", "SQLite, one thread per review")]
-    st.markdown("".join(f'<div class="caption-4" style="margin-top:12px">{k}</div><div class="body-6">{html.escape(v)}</div>'
-                        for k, v in rows), unsafe_allow_html=True)
+        rows.append(("ph-arrows-clockwise", "Fallback model", provider_label(settings.fallback_provider)))
+    rows += [("ph-brain", "Memory", memory.backend),
+             ("ph-github-logo", "GitHub posting", "Token found" if settings.github_token else "No token, comments go to the outbox folder"),
+             ("ph-database", "Checkpoints", "SQLite, one thread per review")]
     if st.session_state.thread_id:
-        st.markdown(f'<div class="caption-5" style="margin-top:16px">Thread {st.session_state.thread_id}</div>',
-                    unsafe_allow_html=True)
+        rows.append(("ph-git-branch", "Current thread", st.session_state.thread_id))
+    st.markdown(ui.side_status(rows), unsafe_allow_html=True)
+    st.markdown(ui.side_links(REPO_URL), unsafe_allow_html=True)
 
 
 # ------------------------------------------------------------------ landing
@@ -268,8 +269,31 @@ def render_report_body(report: dict, review_mode: bool) -> dict[str, str]:
 tab_review, tab_memory, tab_monitor, tab_arch = st.tabs(["Review", "Team memory", "Monitor", "Architecture"])
 snap = snapshot()
 
+def pipeline_state(snap, intr) -> str | None:
+    """Light up the pipeline strip from the checkpoint: what ran, what waits on you, what was skipped."""
+    if snap is None:
+        return None
+    v = snap.values
+    agents = set(AGENT_TITLES)
+    ran = {r["agent"] for r in v.get("agent_runs", [])}
+    if intr and intr["type"] == "plan_review":
+        return ui.pipeline({"intake", "plan"}, "gate1")
+    if intr and intr["type"] == "report_review":
+        return ui.pipeline({"intake", "plan", "gate1", "aggregate"} | ran, "gate2", agents - ran)
+    status = v.get("status")
+    if status == "cancelled":
+        return ui.pipeline({"intake", "plan"}, None, agents | {"gate1", "aggregate", "gate2", "actions"})
+    if snap.next or status == "failed" or not v.get("report"):
+        return None
+    skipped = (agents - ran) | ({"actions"} if status != "completed" else set())
+    return ui.pipeline(({"intake", "plan", "gate1", "aggregate", "gate2", "actions"} | ran) - skipped, None, skipped)
+
+
 with tab_review:
     intr = pending_interrupt(snap)
+    strip = pipeline_state(snap, intr)
+    if strip:
+        st.markdown(strip, unsafe_allow_html=True)
 
     if snap is None:
         c1, c2 = st.columns([1, 1.4])
@@ -401,7 +425,7 @@ with tab_memory:
     if hist:
         df = pd.DataFrame([{"reviewed": datetime.fromtimestamp(h["created"]), "score": h["metadata"].get("score"),
                             "verdict": h["metadata"].get("verdict")} for h in hist])
-        st.line_chart(df, x="reviewed", y="score", height=220, color="#8BD3B0")
+        st.line_chart(df, x="reviewed", y="score", height=220, color="#2DD4BF")
         st.dataframe(df, hide_index=True, use_container_width=True)
     else:
         st.markdown('<div class="body-6">Approve a review with "Remember my feedback" to start the trend line.</div>',
