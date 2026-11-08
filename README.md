@@ -117,12 +117,9 @@ docs/                        project documentation, demo script, architecture di
 
 ## Design
 
-The Streamlit UI is built only from the two skills in [elayadesign/ai-design-skills](https://github.com/elayadesign/ai-design-skills), so it no longer borrows the Team 24 look.
+The Streamlit UI follows the visual system from [elayadesign/ai-design-skills](https://github.com/elayadesign/ai-design-skills) (`landing-page-design`, Part B): Geist type on named text styles, the fixed spacing scale, nested radius rule, flat dark surfaces, hero gradient text, Phosphor icons, a weighted easing curve with reduced motion support, skeleton loaders instead of spinners, composed empty states and calm, specific system messages.
 
-* **`figma-designer`:** a two layer token system. Core Colors palettes (Primary violet `#9283EB`, Secondary, Accent, Grayscale, Red, Green, Yellow) feed a semantic Color System (Surface, Border, Action, Text, Icon) with Dark and Light modes. There is one accent under 80% saturation, buttons come in 5 types × 5 states, the hero has no eyebrow tag and no periods, and layouts use a bento grid and zig-zag rows instead of three equal cards. Body text meets 4.5:1 contrast and UI meets 3:1. A **Design system** tab renders the Foundations frame: palettes, the token table, every button state, spacing, radius and text styles.
-* **`landing-page-design`:** flat dark surfaces (`#000`, `#181818`, `#1F1F1F`, `#272727`) with full borders and no background gradients, a 60/60 hero heading with a white to grey text gradient, Geist type, Phosphor icons, one easing curve with reduced motion support, a word by word tagline reveal, a risk reversal block, skeleton loaders and composed empty states.
-
-A pipeline strip lights up each graph node from the checkpoint (done, waiting for you, skipped). Reject uses the Error button style and Clear caches uses Warning. See `codesentinel/ui_style.py`.
+On top of that it uses the glass and 3D layer from our Team 24 LaneRoom app: a navy base with aurora light, a perspective grid floor and floating spheres, translucent glass panels, a hero card with a 3D tilted report preview that scans code, a pipeline strip that lights up each graph node from the checkpoint (done, waiting for you, skipped), a branded sidebar and pill tabs. The accent is teal because orange already means high severity. See `codesentinel/ui_style.py`.
 
 ## Hard limits
 

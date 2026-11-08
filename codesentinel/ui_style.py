@@ -1,22 +1,22 @@
 """Visual system and HTML components for the Streamlit app.
 
-Built from the two skills in elayadesign/ai-design-skills:
-
-landing-page-design
-  Part A  one offer, one primary action: hero, proof in a bento grid, how it works as a zig zag,
-          tagline reveal, benefits bento, FAQ, risk reversal, final call to action, footer
-  B1      Geist only (Geist Mono for code and figures), named text styles, no italics, no hyphens in copy
-  B2/B3   spacing tokens only; Tailwind radii with the nested radius rule
-  B4      flat surfaces from the allowed dark list, full borders only, no background gradients
-  B5      Heading 1 gradient text #FFFFFF to #9B9B9B, heading and subheading max 680px
-  B6/B7   Phosphor icons; cubic-bezier(0.22,1,0.36,1), transform and opacity only, reduced motion respected
-  B9/B11  every state, skeletons, composed empty states; word by word tagline reveal
-
-figma-designer
-  Two color layers: Core Colors palettes (10+ shades each) feed a Color System of semantic tokens with
-  Light and Dark modes; components bind only to Color System tokens. One accent under 80% saturation.
-  Hero heading has no periods and no eyebrow tag. Buttons: 5 types x 5 states. Bento and zig zag
-  layouts instead of three equal cards. A Foundations view that renders straight from the tokens.
+Derived from elayadesign/ai-design-skills `landing-page-design`, with the glass and 3D layer used by the
+Team 24 LaneRoom app:
+  Part A  page structure: floating nav, hero (outcome headline, subheadline, one primary action,
+          proof line, chips, hero visual), proof strip, how it works, the working product,
+          tagline reveal, benefits, FAQ, final call to action, footer
+  B1      Geist only (Geist Mono for code and figures), named text styles on the Tailwind scale, no italics,
+          weights capped at semibold, no hyphens in copy, balanced headings
+  B2      spacing tokens only: 2 4 8 12 16 24 32 40 48 64 80 96 px; buttons 8 by 12 px padding
+  B3      Tailwind radii with the nested radius rule (inner = outer minus gap)
+  B4      deep navy base with translucent glass surfaces over a fixed 3D background
+          (aurora light, perspective grid floor, floating shaded spheres, tilted ring)
+  B5      hero heading gradient text, heading and subheading max 680px
+  B6      Phosphor icons
+  B7      cubic-bezier(0.22,1,0.36,1), transform and opacity only, rise entrances, scroll reveals without
+          scroll listeners (CSS scroll driven timelines), reduced motion respected
+  B9      hover, active, focus ring, skeleton loading, composed empty states, inline errors
+  B11     tagline reveal: words go from muted to full one at a time as the section scrolls in
 """
 
 from __future__ import annotations
@@ -24,309 +24,198 @@ from __future__ import annotations
 import html
 import re
 
-e = html.escape
-
-# ------------------------------------------------------------------ layer 1: Core Colors
-
-
-def _mix(hex_a: str, hex_b: str, t: float) -> str:
-    a = [int(hex_a[i:i + 2], 16) for i in (1, 3, 5)]
-    b = [int(hex_b[i:i + 2], 16) for i in (1, 3, 5)]
-    return "#" + "".join(f"{round(x + (y - x) * t):02X}" for x, y in zip(a, b))
-
-
-def _palette(base: str, steps: list[int]) -> dict[str, str]:
-    """00 is near white, 500 is the base hue, 1000 is near black."""
-    out = {}
-    for s in steps:
-        if s < 500:
-            out[f"{s:02d}" if s else "00"] = _mix(base, "#FFFFFF", (500 - s) / 500 * 0.96)
-        elif s == 500:
-            out["500"] = base
-        else:
-            out[str(s)] = _mix(base, "#000000", (s - 500) / 500 * 0.94)
-    return out
-
-
-_STEPS = [0, 50, 100, 150, 200, 300, 400, 500, 600, 700, 800, 850, 900, 950, 1000]
-CORE: dict[str, dict[str, str]] = {
-    "Primary": _palette("#9283EB", [0, 50, 100, 150, 200, 300, 350, 400, 450, 500, 600, 700, 800, 850, 900, 950, 1000]),
-    "Secondary": _palette("#7B8CA6", _STEPS),
-    "Accent": _palette("#B3A8F2", _STEPS),
-    "Grayscale": {"00": "#FFFFFF", "50": "#F7F7F7", "100": "#EDEDED", "150": "#E2E2E2", "200": "#D4D4D4", "250": "#C4C4C4",
-                  "300": "#B0B0B0", "400": "#9B9B9B", "450": "#8A8A8A", "500": "#757575", "600": "#5C5C5C", "700": "#454545",
-                  "750": "#313131", "800": "#272727", "850": "#1F1F1F", "870": "#181818", "900": "#121212", "950": "#0A0A0A",
-                  "1000": "#000000"},
-    "Red": _palette("#E5484D", _STEPS),
-    "Green": _palette("#3DB984", _STEPS),
-    "Yellow": _palette("#E8B931", _STEPS),
-}
-
-# ------------------------------------------------------------------ layer 2: Color System (Light and Dark modes)
-# token: (name, css variable, dark alias, light alias). Every value is an alias to a Core Color.
-SYSTEM: dict[str, list[tuple[str, str, str, str]]] = {
-    "Surface": [
-        ("Surface/Page", "surface-page", "Grayscale/1000", "Grayscale/50"),
-        ("Surface/Primary", "surface-primary", "Grayscale/870", "Grayscale/00"),
-        ("Surface/Primary-Hover", "surface-primary-hover", "Grayscale/800", "Grayscale/100"),
-        ("Surface/Primary-subtle", "surface-subtle", "Grayscale/850", "Grayscale/50"),
-        ("Surface/Secondary", "surface-secondary", "Grayscale/800", "Grayscale/100"),
-        ("Surface/Secondary-Hover", "surface-secondary-hover", "Grayscale/700", "Grayscale/150"),
-        ("Surface/Accent-subtle", "surface-accent-subtle", "Primary/900", "Primary/100"),
-        ("Surface/Error-subtle", "surface-error-subtle", "Red/900", "Red/100"),
-        ("Surface/Warning-subtle", "surface-warning-subtle", "Yellow/900", "Yellow/100"),
-        ("Surface/Success-Subtle", "surface-success-subtle", "Green/900", "Green/100"),
-    ],
-    "Border": [
-        ("Border/Primary", "border-primary", "Grayscale/750", "Grayscale/150"),
-        ("Border/Primary-light", "border-light", "Grayscale/700", "Grayscale/200"),
-        ("Border/Action-Primary", "border-action", "Primary/400", "Primary/600"),
-        ("Border/Error", "border-error", "Red/400", "Red/600"),
-        ("Border/Success", "border-success", "Green/400", "Green/600"),
-        ("Border/Warning", "border-warning", "Yellow/300", "Yellow/700"),
-    ],
-    "Action": [
-        ("Action/Primary", "action-primary", "Primary/500", "Primary/500"),
-        ("Action/Primary-Hover", "action-primary-hover", "Primary/400", "Primary/600"),
-        ("Action/Primary-Click", "action-primary-click", "Primary/600", "Primary/700"),
-        ("Action/Primary-Disabled", "action-primary-disabled", "Primary/800", "Primary/200"),
-        ("Action/Secondary", "action-secondary", "Grayscale/750", "Grayscale/100"),
-        ("Action/Secondary-Hover", "action-secondary-hover", "Grayscale/700", "Grayscale/150"),
-        ("Action/Secondary-Click", "action-secondary-click", "Grayscale/800", "Grayscale/200"),
-        ("Action/Error", "action-error", "Red/700", "Red/600"),
-        ("Action/Error-Hover", "action-error-hover", "Red/800", "Red/700"),
-        ("Action/Warning", "action-warning", "Yellow/500", "Yellow/500"),
-        ("Action/Warning - Hover", "action-warning-hover", "Yellow/600", "Yellow/600"),
-    ],
-    "Text": [
-        ("Text/Primary", "text-primary", "Grayscale/50", "Grayscale/950"),
-        ("Text/Secondary", "text-secondary", "Grayscale/200", "Grayscale/700"),
-        ("Text/Tertiary", "text-tertiary", "Grayscale/400", "Grayscale/600"),
-        ("Text/Primary-Subtle", "text-subtle", "Grayscale/450", "Grayscale/500"),
-        ("Text/Inverted", "text-inverted", "Grayscale/870", "Grayscale/50"),
-        ("Text/Info", "text-info", "Primary/350", "Primary/700"),
-        ("Text/Error", "text-error", "Red/400", "Red/700"),
-        ("Text/Success", "text-success", "Green/400", "Green/700"),
-        ("Text/Warning", "text-warning", "Yellow/400", "Yellow/800"),
-    ],
-    "Icon": [
-        ("Icon/Default", "icon-default", "Grayscale/50", "Grayscale/950"),
-        ("Icon/Subtle", "icon-subtle", "Grayscale/450", "Grayscale/500"),
-        ("Icon/Info", "icon-info", "Primary/350", "Primary/600"),
-        ("Icon/Success", "icon-success", "Green/400", "Green/600"),
-        ("Icon/Warning", "icon-warning", "Yellow/400", "Yellow/700"),
-        ("Icon/Error", "icon-error", "Red/400", "Red/600"),
-    ],
-}
-# data visualisation colors for review severity (kept apart from the brand accent)
-SEV_COLOR = {"critical": "#F87171", "high": "#FB923C", "medium": "#FACC15", "low": "#60A5FA", "info": "#A3A3A3"}
-SPACING = [("spacing-0", 0), ("spacing-25", 2), ("spacing-50", 4), ("spacing-75", 8), ("spacing-100", 12), ("spacing-200", 16),
-           ("spacing-300", 24), ("spacing-400", 32), ("spacing-500", 40), ("spacing-600", 48), ("spacing-700", 64),
-           ("spacing-800", 80), ("spacing-900", 96)]
-RADIUS = [("radius-0", 0), ("radius-2", 2), ("radius-4", 4), ("radius-6", 6), ("radius-8", 8), ("radius-12", 12),
-          ("radius-16", 16), ("radius-24", 24), ("radius-full", 9999)]
-TEXT_STYLES = [("Heading 1", 60, 60, 600), ("Heading 2", 48, 48, 600), ("Heading 3", 36, 40, 600), ("Heading 4", 30, 36, 600),
-               ("Heading 5", 24, 32, 600), ("Heading 6", 20, 28, 600), ("Title 1", 20, 28, 500), ("Title 2", 18, 28, 500),
-               ("Title 3", 16, 24, 500), ("Title 4", 14, 20, 500), ("Title 5", 12, 16, 500), ("Body 1", 16, 24, 600),
-               ("Body 3", 16, 24, 400), ("Body 4", 14, 20, 600), ("Body 6", 14, 20, 400), ("Button-md", 16, 24, 600),
-               ("Button-sm", 14, 20, 600), ("Caption 1", 14, 20, 500), ("Caption 3", 12, 16, 600), ("Caption 5", 12, 16, 400)]
-
-
-def resolve(alias: str) -> str:
-    pal, shade = alias.split("/")
-    return CORE[pal][shade]
-
-
-def _var(alias: str) -> str:
-    pal, shade = alias.split("/")
-    return f"var(--{pal.lower()}-{shade})"
-
-
-def _token_css() -> str:
-    core = "".join(f"--{p.lower()}-{s}:{h};" for p, shades in CORE.items() for s, h in shades.items())
-    dark = "".join(f"--{var}:{_var(d)};" for g in SYSTEM.values() for _n, var, d, _l in g)
-    light = "".join(f"--{var}:{_var(lt)};" for g in SYSTEM.values() for _n, var, _d, lt in g)
-    space = "".join(f"--{n}:{v}px;" for n, v in SPACING)
-    rad = "".join(f"--{n}:{v}px;" for n, v in RADIUS)
-    return f":root{{{core}{dark}{space}{rad}}}\n.cs-mode-light{{{light}}}\n"
-
-
 CSS = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap');
 @import url('https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css');
 @import url('https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css');
-""" + _token_css() + """
-:root { --ease: cubic-bezier(0.22, 1, 0.36, 1); --mono: 'Geist Mono', ui-monospace, monospace; }
+
+:root {
+  /* deep navy base, teal accent, translucent glass surfaces over a 3D background */
+  --bg: #050D1A; --side: rgba(6, 16, 30, 0.74); --panel: rgba(14, 34, 56, 0.55); --panel2: rgba(22, 48, 74, 0.58);
+  --raise: rgba(40, 82, 116, 0.6); --line: rgba(125, 211, 252, 0.16); --deep: rgba(2, 8, 16, 0.72);
+  --text: #EAF6FF; --muted: #9DBBCB; --dim: #64818F; --accent: #2DD4BF; --accent2: #5EEAD4; --warm: #FDBA74;
+  --critical: #F87171; --high: #FB923C; --medium: #FACC15; --low: #60A5FA; --info: #A3A3A3;
+  /* aliases kept for older markup */
+  --surface: var(--panel); --card: var(--panel2); --raised: var(--raise); --black: var(--deep);
+  --glass: blur(10px);
+  --shadow: 0 10px 40px rgba(1, 8, 18, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --mono: 'Geist Mono', ui-monospace, monospace;
+}
 
 html, body, .stApp, .stMarkdown, button, input, textarea, select, label, p, li, h1, h2, h3, h4, h5, h6 {
-  font-family: 'Geist', ui-sans-serif, system-ui, sans-serif !important; font-style: normal !important; }
+  font-family: 'Geist', ui-sans-serif, system-ui, sans-serif !important; font-style: normal !important;
+}
 code, pre, .stCode, kbd, .mono { font-family: var(--mono) !important; }
 [class^="ph"], [class*=" ph"] { font-family: 'Phosphor', 'Phosphor-Fill' !important; }
 .ph-fill { font-family: 'Phosphor-Fill' !important; }
-.stApp { background: var(--surface-page); color: var(--text-primary); }
 [data-testid="stHeader"] { background: transparent; }
 .stAppDeployButton, [data-testid="stAppDeployButton"] { display: none; }
-.block-container { padding-top: 96px; padding-bottom: 64px; max-width: 1200px; }
+.block-container { padding-top: 96px; padding-bottom: 64px; max-width: 1180px; }
 h1, h2, h3, h4 { font-weight: 600 !important; text-wrap: balance; letter-spacing: -0.01em; }
 p, li { text-wrap: pretty; }
-a, a:hover, a:visited, [data-testid="stMarkdownContainer"] a { text-decoration: none !important; }
+a, a:hover, a:visited, [data-testid="stMarkdownContainer"] a, [data-testid="stMarkdownContainer"] a:hover { text-decoration: none !important; }
+
+/* ---------- 3D background: aurora light, perspective grid floor, floating shaded spheres ---------- */
+.stApp { background: radial-gradient(1200px 700px at 15% -10%, #0B2A46 0%, transparent 60%),
+  radial-gradient(900px 600px at 100% 10%, #0A3438 0%, transparent 55%), var(--bg); }
+[data-testid="stMain"], [data-testid="stSidebar"], [data-testid="stHeader"] { position: relative; z-index: 1; }
+.cs-bg3d { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+.cs-bg3d .aurora { position: absolute; width: 70vmax; height: 70vmax; border-radius: 50%; filter: blur(90px); opacity: 0.42;
+  animation: cs-drift 26s ease-in-out infinite alternate; }
+.cs-bg3d .a1 { left: -20vmax; top: -25vmax; background: radial-gradient(circle, #0EA5E9 0%, transparent 65%); }
+.cs-bg3d .a2 { right: -25vmax; top: 10vh; background: radial-gradient(circle, #14B8A6 0%, transparent 65%); animation-delay: -9s; opacity: 0.3; }
+.cs-bg3d .a3 { left: 30vw; bottom: -40vmax; background: radial-gradient(circle, #8B5CF6 0%, transparent 60%); animation-delay: -16s; opacity: 0.2; }
+.cs-bg3d .floor { position: absolute; left: -50%; right: -50%; bottom: -8vh; height: 58vh; transform-origin: 50% 100%;
+  transform: perspective(520px) rotateX(64deg);
+  background-image: linear-gradient(rgba(56, 189, 248, 0.28) 1px, transparent 1px), linear-gradient(90deg, rgba(56, 189, 248, 0.28) 1px, transparent 1px);
+  background-size: 64px 64px; animation: cs-floor 6s linear infinite;
+  -webkit-mask-image: linear-gradient(to top, #000 10%, transparent 90%); mask-image: linear-gradient(to top, #000 10%, transparent 90%); }
+.cs-bg3d .orb { position: absolute; border-radius: 50%; animation: cs-float 14s ease-in-out infinite;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.45), inset -14px -18px 40px rgba(0, 0, 0, 0.45); }
+.cs-bg3d .o1 { width: 180px; height: 180px; right: 5vw; top: 18vh; background: radial-gradient(circle at 32% 28%, #FFFFFF 0%, #A5F3FC 12%, #0E7490 48%, #082F49 100%); }
+.cs-bg3d .o2 { width: 96px; height: 96px; right: 2vw; top: 80vh; background: radial-gradient(circle at 32% 28%, #FFFFFF 0%, #99F6E4 12%, #0D9488 50%, #042F2E 100%); animation-delay: -5s; }
+.cs-bg3d .o3 { width: 56px; height: 56px; right: 3vw; top: 7vh; background: radial-gradient(circle at 32% 28%, #FFFFFF 0%, #FED7AA 14%, #F97316 52%, #7C2D12 100%); animation-delay: -9s; }
+.cs-bg3d .o4 { width: 72px; height: 72px; left: 46vw; top: 88vh; background: radial-gradient(circle at 32% 28%, #FFFFFF 0%, #DDD6FE 12%, #7C3AED 50%, #2E1065 100%); animation-delay: -3s; opacity: 0.8; }
+.cs-bg3d .ring { position: absolute; right: 9vw; top: 56vh; width: 220px; height: 220px; border-radius: 50%; border: 10px solid rgba(56, 189, 248, 0.2);
+  box-shadow: 0 0 40px rgba(56, 189, 248, 0.25), inset 0 0 30px rgba(56, 189, 248, 0.2); transform: rotateX(70deg) rotateZ(20deg);
+  animation: cs-spin 30s linear infinite; }
+@keyframes cs-drift { from { transform: translate3d(0, 0, 0) scale(1); } to { transform: translate3d(6vw, 4vh, 0) scale(1.12); } }
+@keyframes cs-floor { to { background-position: 0 64px, 0 0; } }
+@keyframes cs-float { 0%, 100% { transform: translate3d(0, 0, 0); } 50% { transform: translate3d(0, -26px, 0); } }
+@keyframes cs-spin { to { transform: rotateX(70deg) rotateZ(380deg); } }
+
+/* ---------- glass surfaces ---------- */
+.cs-nav, .cs-hero, .cs-preview, .cs-stat, .cs-step-card, .cs-ring, .cs-board, .cs-agent, .cs-finding, .cs-card, .cs-timeline,
+.cs-empty, .cs-callout, .cs-pipe, [data-testid="stExpander"] details, .stTabs [data-baseweb="tab-list"] {
+  -webkit-backdrop-filter: var(--glass); backdrop-filter: var(--glass); box-shadow: var(--shadow); }
 
 /* ---------- named text styles (B1) ---------- */
-.heading-1 { font-size: 60px; line-height: 60px; font-weight: 600; }
 .heading-2 { font-size: 48px; line-height: 48px; font-weight: 600; }
-.heading-3 { font-size: 36px; line-height: 40px; font-weight: 600; color: var(--text-primary); }
+.heading-3 { font-size: 36px; line-height: 40px; font-weight: 600; }
 .heading-4 { font-size: 30px; line-height: 36px; font-weight: 600; }
-.heading-5 { font-size: 24px; line-height: 32px; font-weight: 600; color: var(--text-primary); }
-.heading-6 { font-size: 20px; line-height: 28px; font-weight: 600; color: var(--text-primary); }
-.title-1 { font-size: 20px; line-height: 28px; font-weight: 500; color: var(--text-primary); }
-.title-2 { font-size: 18px; line-height: 28px; font-weight: 500; color: var(--text-primary); }
-.title-3 { font-size: 16px; line-height: 24px; font-weight: 500; color: var(--text-primary); }
-.title-4 { font-size: 14px; line-height: 20px; font-weight: 500; color: var(--text-primary); }
-.body-3 { font-size: 16px; line-height: 24px; font-weight: 400; color: var(--text-tertiary); }
-.body-6 { font-size: 14px; line-height: 20px; font-weight: 400; color: var(--text-tertiary); }
-.caption-1 { font-size: 14px; line-height: 20px; font-weight: 500; color: var(--text-secondary); }
-.caption-3 { font-size: 12px; line-height: 16px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; }
-.caption-4 { font-size: 12px; line-height: 16px; font-weight: 500; color: var(--text-tertiary); }
-.caption-5 { font-size: 12px; line-height: 16px; font-weight: 400; color: var(--text-subtle); }
+.heading-5 { font-size: 24px; line-height: 32px; font-weight: 600; }
+.heading-6 { font-size: 20px; line-height: 28px; font-weight: 600; color: #fff; }
+.title-2 { font-size: 18px; line-height: 28px; font-weight: 500; color: #fff; }
+.title-3 { font-size: 16px; line-height: 24px; font-weight: 500; color: #fff; }
+.title-4 { font-size: 14px; line-height: 20px; font-weight: 500; color: var(--text); }
+.body-3 { font-size: 16px; line-height: 24px; font-weight: 400; color: var(--muted); }
+.body-6 { font-size: 14px; line-height: 20px; font-weight: 400; color: var(--muted); }
+.caption-3 { font-size: 12px; line-height: 16px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.caption-4 { font-size: 12px; line-height: 16px; font-weight: 500; color: var(--muted); }
+.caption-5 { font-size: 12px; line-height: 16px; font-weight: 400; color: var(--dim); }
 
-/* ---------- floating nav (B7): translucent surface over a blur ---------- */
+/* ---------- floating nav ---------- */
 .cs-nav { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 999990;
   display: flex; align-items: center; gap: 24px; padding: 8px 8px 8px 16px; border-radius: 9999px;
-  background: rgba(24, 24, 24, 0.8); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--border-primary); white-space: nowrap; }
+  background: rgba(6, 18, 32, 0.72); border: 1px solid var(--line); white-space: nowrap;
+  transition: left 300ms var(--ease); }
 .stApp:has([data-testid="stSidebar"][data-collapsed="false"]) .cs-nav { left: calc(50% + 150px); }
-.cs-nav .brand { display: flex; gap: 8px; align-items: center; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--text-primary); }
-.cs-nav .brand i { color: var(--icon-info); font-size: 20px; }
+.cs-nav .brand { display: flex; gap: 8px; align-items: center; font-size: 14px; line-height: 20px; font-weight: 600; color: #fff; }
+.cs-nav .brand i { color: var(--accent); font-size: 20px; }
 .cs-nav .links { display: flex; gap: 16px; }
-.cs-nav .links a { font-size: 14px; line-height: 20px; font-weight: 500; color: var(--text-tertiary); transition: color 300ms var(--ease); }
-.cs-nav .links a:hover, .cs-nav .links a.current { color: var(--text-primary); }
-.cs-nav .cta { font-size: 14px; line-height: 20px; font-weight: 600; color: var(--text-inverted) !important; background: var(--action-primary);
-  padding: 8px 12px; border-radius: 9999px; display: inline-flex; gap: 4px; align-items: center;
-  transition: background-color 300ms var(--ease), transform 500ms var(--ease); }
-.cs-nav .cta:hover { background: var(--action-primary-hover); transform: translateY(-1px); }
-.cs-nav .cta:active { background: var(--action-primary-click); transform: scale(0.98); }
+.cs-nav .links a { font-size: 14px; line-height: 20px; font-weight: 500; color: var(--muted); transition: color 300ms var(--ease); }
+.cs-nav .links a:hover, .cs-nav .links a.current { color: #fff; }
+.cs-nav .cta { font-size: 14px; line-height: 20px; font-weight: 600; color: #04131B !important; background: var(--accent);
+  padding: 8px 12px; border-radius: 9999px; transition: transform 300ms var(--ease), background-color 300ms var(--ease);
+  display: inline-flex; gap: 4px; align-items: center; }
+.cs-nav .cta:hover { transform: translateY(-1px); background: var(--accent2); }
+.cs-nav .cta:active { transform: scale(0.98); }
 
-/* ---------- buttons: 5 types x 5 states (figma-designer) ---------- */
-.cs-b { display: inline-flex; gap: 8px; align-items: center; justify-content: center; padding: 8px 12px; border-radius: 12px;
-  font-size: 16px; line-height: 24px; font-weight: 600; border: 1px solid transparent; cursor: pointer;
-  transition: background-color 300ms var(--ease), border-color 300ms var(--ease), color 300ms var(--ease), transform 500ms var(--ease); }
-.cs-b.sm { font-size: 14px; line-height: 20px; }
-.cs-b.t-primary { background: var(--action-primary); color: var(--text-inverted) !important; }
-.cs-b.t-primary:hover, .cs-b.t-primary.s-hover { background: var(--action-primary-hover); }
-.cs-b.t-primary:active, .cs-b.t-primary.s-pressed { background: var(--action-primary-click); transform: scale(0.98); }
-.cs-b.t-secondary { background: var(--action-secondary); color: var(--text-primary) !important; border-color: var(--border-light); }
-.cs-b.t-secondary:hover, .cs-b.t-secondary.s-hover { background: var(--action-secondary-hover); }
-.cs-b.t-secondary:active, .cs-b.t-secondary.s-pressed { background: var(--action-secondary-click); transform: scale(0.98); }
-.cs-b.t-tertiary { background: transparent; color: var(--text-info) !important; }
-.cs-b.t-tertiary:hover, .cs-b.t-tertiary.s-hover { background: var(--surface-primary-hover); }
-.cs-b.t-tertiary:active, .cs-b.t-tertiary.s-pressed { background: var(--surface-secondary); transform: scale(0.98); }
-.cs-b.t-error { background: var(--action-error); color: #FFFFFF !important; }
-.cs-b.t-error:hover, .cs-b.t-error.s-hover { background: var(--action-error-hover); }
-.cs-b.t-error:active, .cs-b.t-error.s-pressed { transform: scale(0.98); }
-.cs-b.t-warning { background: var(--action-warning); color: var(--text-inverted) !important; }
-.cs-b.t-warning:hover, .cs-b.t-warning.s-hover { background: var(--action-warning-hover); }
-.cs-b.t-warning:active, .cs-b.t-warning.s-pressed { transform: scale(0.98); }
-.cs-b:focus-visible, .cs-b.s-focus { outline: 2px solid var(--border-action); outline-offset: 2px; }
-.cs-b.s-disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-
-/* ---------- hero (B5): no eyebrow, no periods, Heading 1 ---------- */
-.cs-hero { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); gap: 48px; align-items: center; margin: 32px 0 48px 0; }
-.cs-h1 { max-width: 680px; margin: 0 0 24px 0; letter-spacing: -0.02em;
-  background: linear-gradient(90deg, #FFFFFF, #9B9B9B); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.cs-sub { font-size: 18px; line-height: 28px; font-weight: 400; color: var(--text-tertiary); max-width: 680px; }
+/* ---------- hero ---------- */
+.cs-hero { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr)); gap: 40px; align-items: center;
+  margin: 16px 0 24px 0; padding: 48px 40px; border-radius: 24px; background: var(--panel); border: 1px solid var(--line);
+  position: relative; overflow: hidden; animation: cs-rise 700ms var(--ease) backwards; }
+.cs-eyebrow { display: inline-flex; gap: 8px; align-items: center; padding: 4px 12px; border-radius: 9999px;
+  font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent2);
+  border: 1px solid rgba(45, 212, 191, 0.32); background: var(--side); }
+.cs-eyebrow .dot { width: 8px; height: 8px; border-radius: 9999px; background: var(--accent); animation: cs-pulse 1800ms var(--ease) infinite; }
+.cs-h1 { font-size: 48px; line-height: 52px; font-weight: 600; letter-spacing: -0.02em; max-width: 680px; margin: 24px 0 16px 0;
+  background: linear-gradient(90deg, #FFFFFF 0%, #BAE6FD 55%, #FDBA74 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.cs-sub { font-size: 18px; line-height: 28px; font-weight: 400; color: var(--muted); max-width: 680px; }
 .cs-actions { display: flex; gap: 12px; align-items: center; margin-top: 32px; flex-wrap: wrap; }
-.cs-proofline { display: flex; gap: 8px; align-items: center; margin-top: 24px; font-size: 14px; line-height: 20px; color: var(--text-tertiary); }
-.cs-proofline i { color: var(--icon-success); font-size: 16px; }
+.cs-btn { display: inline-flex; gap: 8px; align-items: center; padding: 8px 12px; border-radius: 12px; font-size: 16px; line-height: 24px;
+  font-weight: 600; transition: transform 300ms var(--ease), background-color 300ms var(--ease), border-color 300ms var(--ease);
+  border: 1px solid var(--line); }
+.cs-btn.primary { background: var(--accent); color: #04131B !important; border-color: var(--accent); }
+.cs-btn.primary:hover { background: var(--accent2); border-color: var(--accent2); }
+.cs-btn.ghost { color: var(--text) !important; background: var(--panel2); }
+.cs-btn.ghost:hover { border-color: var(--accent); }
+.cs-btn:hover { transform: translateY(-1px); }
+.cs-btn:active { transform: scale(0.98); }
+.cs-btn:focus-visible, .cs-nav a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.cs-proofline { display: flex; gap: 8px; align-items: center; margin-top: 24px; font-size: 14px; line-height: 20px; color: var(--muted); }
+.cs-proofline i { color: var(--accent); font-size: 16px; }
+.cs-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
+.cs-hchip { display: inline-flex; align-items: center; gap: 8px; background: var(--panel2); border: 1px solid var(--line); border-radius: 9999px;
+  padding: 8px 12px; font-size: 14px; line-height: 20px; color: var(--muted); }
+.cs-hchip i { color: var(--accent); font-size: 16px; }
+.cs-hchip b { color: var(--text); font-weight: 500; }
 
-/* hero visual: the real report, flat */
-.cs-preview { background: var(--surface-primary); border: 1px solid var(--border-primary); border-radius: 24px; padding: 16px; }
+/* hero visual: a report preview tilted in 3D, with a scan line sweeping the code */
+.cs-hero-visual { perspective: 1400px; animation: cs-rise 900ms var(--ease) 120ms backwards; }
+.cs-preview { background: rgba(6, 18, 32, 0.72); border: 1px solid var(--line); border-radius: 24px; padding: 16px;
+  transform: rotateY(-8deg) rotateX(4deg); transform-style: preserve-3d; transition: transform 700ms var(--ease); }
+.cs-preview:hover { transform: rotateY(0deg) rotateX(0deg); }
 .cs-preview .chrome { display: flex; gap: 8px; align-items: center; padding: 0 4px 12px 4px; }
-.cs-preview .chrome span { width: 12px; height: 12px; border-radius: 9999px; background: var(--surface-secondary); }
+.cs-preview .chrome span { width: 12px; height: 12px; border-radius: 9999px; background: var(--raise); }
+.cs-preview .chrome span:nth-child(1) { background: #F87171; } .cs-preview .chrome span:nth-child(2) { background: #FACC15; }
+.cs-preview .chrome span:nth-child(3) { background: #2DD4BF; }
 .cs-preview .chrome .path { width: auto; height: auto; background: none !important; margin-left: 8px; }
-.cs-preview .pane { background: var(--surface-subtle); border: 1px solid var(--border-primary); border-radius: 8px; padding: 16px; }
+.cs-preview .pane { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
 .cs-preview .pane + .pane { margin-top: 8px; }
 .cs-preview .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .cs-preview .finding { display: flex; gap: 12px; align-items: flex-start; padding: 8px 0; }
-.cs-preview .finding + .finding { border-top: 1px solid var(--border-primary); }
-.cs-scan { position: relative; overflow: hidden; padding: 12px 0 !important; font-family: var(--mono) !important; font-size: 12px; line-height: 24px;
-  background: var(--grayscale-1000) !important; }
-.cs-scan .ln { display: grid; grid-template-columns: 24px minmax(0, 1fr) 16px; gap: 8px; padding: 0 12px; color: var(--text-tertiary); }
-.cs-scan .ln .no { color: var(--text-subtle); text-align: right; }
+.cs-preview .finding + .finding { border-top: 1px solid var(--line); }
+.cs-preview .agents { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.cs-preview .agent { background: var(--panel2); border-radius: 8px; padding: 8px 12px; }
+.cs-preview .agent .title-4 { color: var(--accent2); }
+.cs-scan { position: relative; overflow: hidden; padding: 12px 0 !important; font-family: var(--mono) !important; font-size: 12px; line-height: 22px;
+  background: var(--deep) !important; }
+.cs-scan .ln { display: grid; grid-template-columns: 28px minmax(0, 1fr) 20px; gap: 8px; padding: 0 12px; color: var(--muted); }
+.cs-scan .ln .no { color: var(--dim); text-align: right; }
 .cs-scan .ln .c { white-space: pre; overflow: hidden; text-overflow: ellipsis; }
-.cs-scan .ln.hit { background: var(--surface-error-subtle); color: var(--text-primary); }
-.cs-scan .ln .flag { color: var(--icon-error); font-size: 14px; line-height: 24px; }
-.cs-scan .k { color: var(--primary-300); } .cs-scan .s { color: var(--yellow-300); } .cs-scan .f { color: var(--secondary-200); }
-.cs-scan .beam { position: absolute; left: 0; right: 0; top: 12px; height: 24px; pointer-events: none; background: rgba(146, 131, 235, 0.12);
-  border-top: 1px solid var(--border-action); border-bottom: 1px solid var(--border-action); animation: cs-beam 3600ms var(--ease) infinite; }
-@keyframes cs-beam { from { transform: translateY(0); } to { transform: translateY(96px); } }
-
-/* ---------- bento proof grid ---------- */
-.cs-bento { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: minmax(152px, auto); gap: 16px; }
-.cs-tile { background: var(--surface-primary); border: 1px solid var(--border-primary); border-radius: 24px; padding: 24px;
-  display: flex; flex-direction: column; justify-content: space-between; gap: 16px; transition: border-color 300ms var(--ease), transform 500ms var(--ease); }
-.cs-tile:hover { border-color: var(--border-light); transform: translateY(-2px); }
-.cs-tile.big { grid-column: span 2; grid-row: span 2; }
-.cs-tile.wide { grid-column: span 2; }
-.cs-tile .num { font-family: var(--mono) !important; font-size: 48px; line-height: 48px; font-weight: 600; color: var(--text-primary); font-variant-numeric: tabular-nums; }
-.cs-tile .num.xl { font-size: 72px; line-height: 72px; }
-.cs-tile .ico { width: 40px; height: 40px; border-radius: 12px; background: var(--surface-accent-subtle); color: var(--icon-info);
-  display: grid; place-items: center; font-size: 20px; }
-.cs-bars { display: flex; flex-direction: column; gap: 12px; }
-.cs-bars .r { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; }
-.cs-bars .track { grid-column: 1 / -1; height: 8px; border-radius: 9999px; background: var(--surface-secondary); overflow: hidden; }
-.cs-bars .track i { display: block; height: 100%; border-radius: 9999px; background: var(--action-primary); transform-origin: left; animation: cs-grow 900ms var(--ease) backwards; }
-.cs-stack { display: flex; flex-wrap: wrap; gap: 8px; }
-.cs-tag { display: inline-flex; gap: 8px; align-items: center; padding: 4px 12px; border-radius: 9999px; border: 1px solid var(--border-primary);
-  background: var(--surface-subtle); font-size: 14px; line-height: 20px; color: var(--text-secondary); }
-.cs-tag i { color: var(--icon-info); }
-
-/* ---------- zig zag how it works ---------- */
-.cs-zz { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 48px; align-items: center; padding: 40px 0; }
-.cs-zz + .cs-zz { border-top: 1px solid var(--border-primary); }
-.cs-zz.rev .txt { order: 2; }
-.cs-zz .n { font-family: var(--mono) !important; font-size: 14px; line-height: 20px; color: var(--text-info); }
-.cs-zz h3 { font-size: 30px !important; line-height: 36px !important; margin: 8px 0 12px 0; padding: 0; color: var(--text-primary); }
-.cs-mini { background: var(--surface-primary); border: 1px solid var(--border-primary); border-radius: 16px; padding: 16px; }
-.cs-mini .line { display: flex; gap: 8px; align-items: center; padding: 8px 12px; border-radius: 8px; background: var(--surface-subtle);
-  border: 1px solid var(--border-primary); font-size: 14px; line-height: 20px; color: var(--text-secondary); }
-.cs-mini .line + .line { margin-top: 8px; }
-.cs-mini .line i { color: var(--icon-info); font-size: 16px; }
-.cs-mini .line .ok { margin-left: auto; }
-.cs-mini .line .ok i { color: var(--icon-success); }
-.cs-mini .run { margin-left: auto; width: 64px; height: 4px; border-radius: 9999px; background: var(--surface-secondary); overflow: hidden; flex: none; }
-.cs-mini .run i { display: block; height: 100%; width: 40%; background: var(--action-primary); border-radius: 9999px; animation: cs-run 1600ms var(--ease) infinite; }
-@keyframes cs-run { from { transform: translateX(-100%); } to { transform: translateX(260%); } }
-.cs-check { width: 16px; height: 16px; border-radius: 4px; border: 1px solid var(--border-light); display: grid; place-items: center; font-size: 12px; flex: none; }
-.cs-check.on { background: var(--action-primary); border-color: var(--action-primary); }
-.cs-check.on i { color: var(--text-inverted) !important; font-size: 12px !important; }
+.cs-scan .ln.hit { background: rgba(248, 113, 113, 0.1); box-shadow: inset 2px 0 0 var(--critical); color: var(--text); }
+.cs-scan .ln .flag { color: var(--critical); font-size: 14px; animation: cs-pulse 1600ms var(--ease) infinite; }
+.cs-scan .k { color: #C4B5FD; } .cs-scan .s { color: var(--warm); } .cs-scan .f { color: #7DD3FC; }
+.cs-scan .beam { position: absolute; left: 0; right: 0; top: 0; height: 40px; pointer-events: none;
+  background: linear-gradient(180deg, transparent, rgba(45, 212, 191, 0.16)); border-bottom: 1px solid rgba(45, 212, 191, 0.6);
+  animation: cs-beam 3400ms var(--ease) infinite; }
+@keyframes cs-beam { from { transform: translateY(-44px); } to { transform: translateY(150px); } }
 
 /* ---------- agent pipeline strip ---------- */
 .cs-pipe { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0 24px 0; padding: 12px;
-  border-radius: 16px; background: var(--surface-primary); border: 1px solid var(--border-primary); }
-.cs-node { display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 4px; background: var(--surface-subtle);
-  border: 1px solid var(--border-primary); font-size: 12px; line-height: 16px; font-weight: 500; color: var(--text-tertiary); }
-.cs-node i { font-size: 16px; color: var(--icon-subtle); }
-.cs-node.done { color: var(--text-primary); border-color: var(--border-success); background: var(--surface-success-subtle); }
-.cs-node.done i { color: var(--icon-success); }
-.cs-node.active { color: var(--text-primary); border-color: var(--border-action); background: var(--surface-accent-subtle); }
-.cs-node.active i { color: var(--icon-info); }
-.cs-node.active small { color: var(--text-info); font-size: 12px; }
-.cs-node.skip { opacity: 0.5; text-decoration: line-through; }
-.cs-pipe .arrow { color: var(--icon-subtle); font-size: 12px; }
+  border-radius: 16px; background: var(--panel); border: 1px solid var(--line); animation: cs-rise 700ms var(--ease) backwards; }
+.cs-node { display: flex; align-items: center; gap: 4px; padding: 4px 12px; border-radius: 8px; background: var(--panel2);
+  border: 1px solid var(--line); font-size: 12px; line-height: 16px; font-weight: 500; color: var(--muted); }
+.cs-node i { font-size: 16px; }
+.cs-node.gate i { color: var(--warm); }
+.cs-node.done { color: var(--text); border-color: rgba(45, 212, 191, 0.4); background: rgba(45, 212, 191, 0.1); }
+.cs-node.done i { color: var(--accent); }
+.cs-node.active { color: #fff; border-color: var(--warm); background: rgba(253, 186, 116, 0.12); animation: cs-glow 1800ms var(--ease) infinite; }
+.cs-node.active i { color: var(--warm); }
+.cs-node.skip { opacity: 0.45; text-decoration: line-through; }
+.cs-pipe .arrow { color: var(--dim); font-size: 12px; }
 .cs-pipe .par { display: flex; flex-direction: column; gap: 4px; }
+@keyframes cs-glow { 0%, 100% { box-shadow: 0 0 0 0 rgba(253, 186, 116, 0.0); } 50% { box-shadow: 0 0 0 4px rgba(253, 186, 116, 0.18); } }
 
 /* ---------- section scaffolding ---------- */
-.cs-section { margin: 96px 0 32px 0; }
-.cs-section .kicker { display: flex; gap: 8px; align-items: center; color: var(--text-info); }
-.cs-section h2.title { margin: 12px 0 8px 0; max-width: 680px; padding: 0; }
-.cs-band { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 24px; padding: 32px;
-  border-radius: 24px; background: var(--surface-primary); border: 1px solid var(--border-primary); }
-.cs-band .it { display: flex; gap: 12px; align-items: flex-start; }
-.cs-band .it i { color: var(--icon-success); font-size: 20px; margin-top: 2px; }
-.cs-grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 16px; }
-.cs-stat { background: var(--surface-primary); border: 1px solid var(--border-primary); border-radius: 16px; padding: 24px; }
-.cs-stat .num { font-family: var(--mono) !important; font-size: 36px; line-height: 40px; font-weight: 600; color: var(--text-primary); }
+.cs-section { margin: 80px 0 32px 0; }
+.cs-section .kicker { display: flex; gap: 8px; align-items: center; color: var(--accent2); }
+.cs-section h2.title { font-size: 36px; line-height: 40px; font-weight: 600; margin: 12px 0 8px 0; max-width: 680px; color: #fff; padding: 0; }
+.cs-grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 16px; margin-top: 32px; }
+.cs-grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 16px; }
+.cs-stat { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 24px;
+  transition: transform 500ms var(--ease), border-color 300ms var(--ease); transform-style: preserve-3d; }
+.cs-stat:hover { transform: translateY(-4px) rotateX(2deg); border-color: var(--raise); }
+.cs-stat .num { font-family: var(--mono) !important; font-size: 36px; line-height: 40px; font-weight: 600; color: #fff; font-variant-numeric: tabular-nums; }
+.cs-step-card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 24px;
+  transition: transform 500ms var(--ease), border-color 300ms var(--ease); transform-style: preserve-3d; }
+.cs-step-card:hover { transform: translateY(-4px) rotateX(2deg); border-color: rgba(45, 212, 191, 0.45); }
+.cs-step-card .icon { width: 40px; height: 40px; border-radius: 12px; background: rgba(45, 212, 191, 0.12); display: flex; align-items: center;
+  justify-content: center; color: var(--accent); font-size: 20px; margin-bottom: 16px; }
+.cs-step-card .n { float: right; }
 
 @supports (animation-timeline: view()) {
   .cs-reveal { animation: cs-rise linear both; animation-timeline: view(); animation-range: entry 0% entry 40%; }
@@ -334,182 +223,169 @@ a, a:hover, a:visited, [data-testid="stMarkdownContainer"] a { text-decoration: 
 
 /* ---------- tagline reveal (B11) ---------- */
 .cs-tagline { margin: 96px 0; view-timeline-name: --tagline; }
-.cs-tagline p { font-size: 60px; line-height: 60px; font-weight: 600; letter-spacing: -0.02em; max-width: 880px; color: var(--text-primary); }
+.cs-tagline p { font-size: 48px; line-height: 52px; font-weight: 600; letter-spacing: -0.02em; max-width: 680px; color: #fff; }
 .cs-tagline .w { opacity: 1; }
 @supports (animation-timeline: view()) {
-  .cs-tagline .w { opacity: 0.3; animation: cs-word var(--ease) both; animation-timeline: --tagline; animation-range: cover var(--s) cover var(--e); }
+  .cs-tagline .w { opacity: 0.25; animation: cs-word var(--ease) both; animation-timeline: --tagline;
+    animation-range: cover var(--s) cover var(--e); }
 }
-@keyframes cs-word { from { opacity: 0.3; } to { opacity: 1; } }
+@keyframes cs-word { from { opacity: 0.25; } to { opacity: 1; } }
 
 /* ---------- product UI ---------- */
 .cs-chip { display: inline-flex; gap: 4px; align-items: center; padding: 2px 8px; border-radius: 9999px; font-size: 12px; line-height: 16px;
-  font-weight: 500; color: var(--text-tertiary); background: var(--surface-subtle); border: 1px solid var(--border-primary); white-space: nowrap; }
-.cs-chip.ok { color: var(--text-success); border-color: var(--border-success); background: var(--surface-success-subtle); }
-.cs-chip.warn { color: var(--text-warning); border-color: var(--border-warning); background: var(--surface-warning-subtle); }
-.cs-chip.info { color: var(--text-info); border-color: var(--border-action); background: var(--surface-accent-subtle); }
-.cs-card { background: var(--surface-primary); border: 1px solid var(--border-primary); border-radius: 16px; padding: 16px 24px; animation: cs-rise 600ms var(--ease) backwards; }
+  font-weight: 500; color: var(--muted); background: var(--panel2); border: 1px solid var(--line); white-space: nowrap; }
+.cs-chip.ok { color: #7CF0D9; background: rgba(45, 212, 191, 0.12); border-color: rgba(45, 212, 191, 0.3); }
+.cs-chip.warn { color: #FFD0A8; background: rgba(251, 146, 60, 0.12); border-color: rgba(251, 146, 60, 0.35); }
+.cs-card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px 24px; animation: cs-rise 600ms var(--ease) backwards; }
 .cs-card + .cs-card { margin-top: 12px; }
-.cs-inner { background: var(--surface-subtle); border: 1px solid var(--border-primary); border-radius: 8px; padding: 8px 12px; }
+.cs-inner { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; }
 .cs-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; line-height: 16px; font-weight: 600;
-  padding: 2px 8px; border-radius: 9999px; border: 1px solid currentColor; }
-.sev-critical { color: #F87171; } .sev-high { color: #FB923C; } .sev-medium { color: #FACC15; } .sev-low { color: #60A5FA; } .sev-info { color: #A3A3A3; }
-.verdict-block { color: var(--text-error); } .verdict-request_changes { color: #FB923C; }
-.verdict-approve_with_comments { color: var(--text-warning); } .verdict-approve { color: var(--text-success); }
+  padding: 2px 8px; border-radius: 9999px; border: 1px solid currentColor; background: rgba(2, 8, 16, 0.35); }
+.sev-critical { color: var(--critical); } .sev-high { color: var(--high); } .sev-medium { color: var(--medium); }
+.sev-low { color: var(--low); } .sev-info { color: var(--info); }
+.verdict-block { color: var(--critical); } .verdict-request_changes { color: var(--high); }
+.verdict-approve_with_comments { color: var(--medium); } .verdict-approve { color: var(--accent); }
 
 .cs-scoreboard { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 16px; animation: cs-rise 700ms var(--ease) backwards; }
-.cs-ring { background: var(--surface-primary); border: 1px solid var(--border-primary); border-radius: 16px; padding: 16px; display: flex;
+.cs-ring { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: flex;
   flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
-.cs-ring svg circle.track { stroke: var(--surface-secondary); }
-.cs-ring svg circle.val { animation: cs-ring 1200ms var(--ease) both; }
+.cs-ring svg circle.track { stroke: rgba(125, 211, 252, 0.12); }
+.cs-ring svg circle.val { animation: cs-ring 1200ms var(--ease) both; filter: drop-shadow(0 0 8px currentColor); }
 @keyframes cs-ring { from { stroke-dashoffset: var(--c); } }
-.cs-board { background: var(--surface-primary); border: 1px solid var(--border-primary); border-radius: 16px; padding: 24px; }
-.cs-sevbar { display: flex; height: 12px; border-radius: 9999px; overflow: hidden; background: var(--surface-secondary); margin: 16px 0 12px 0; gap: 2px; }
-.cs-sevbar span { display: block; height: 100%; transform-origin: left; animation: cs-grow 900ms var(--ease) backwards; }
+.cs-board { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 24px; }
+.cs-sevbar { display: flex; height: 12px; border-radius: 9999px; overflow: hidden; background: var(--raise); margin: 16px 0 12px 0; gap: 2px; }
+.cs-sevbar span { display: block; height: 100%; transform-origin: left; animation: cs-grow 900ms var(--ease) both; }
 @keyframes cs-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 .cs-legend { display: flex; gap: 16px; flex-wrap: wrap; }
-.cs-legend span { display: inline-flex; gap: 4px; align-items: center; font-size: 12px; line-height: 16px; color: var(--text-tertiary); }
-.cs-legend b { font-weight: 600; color: var(--text-primary); font-family: var(--mono) !important; }
+.cs-legend span { display: inline-flex; gap: 4px; align-items: center; font-size: 12px; line-height: 16px; color: var(--muted); }
+.cs-legend b { font-weight: 600; color: #fff; font-family: var(--mono) !important; }
 .cs-legend i.sq { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
 
 .cs-agents { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 12px; margin-top: 12px; }
-.cs-agent { background: var(--surface-primary); border: 1px solid var(--border-primary); border-radius: 16px; padding: 16px; display: flex; gap: 12px;
+.cs-agent { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: flex; gap: 12px;
   animation: cs-rise 700ms var(--ease) backwards; }
-.cs-agent .icon { width: 40px; height: 40px; flex: none; border-radius: 12px; background: var(--surface-accent-subtle); display: flex;
-  align-items: center; justify-content: center; font-size: 20px; color: var(--icon-info); }
+.cs-agent:nth-child(2) { animation-delay: 80ms; } .cs-agent:nth-child(3) { animation-delay: 160ms; }
+.cs-agent .icon { width: 40px; height: 40px; flex: none; border-radius: 12px; background: rgba(45, 212, 191, 0.12); display: flex;
+  align-items: center; justify-content: center; font-size: 20px; color: var(--accent); }
 
-.cs-finding { background: var(--surface-primary); border: 1px solid var(--border-primary); border-radius: 16px; padding: 16px 16px 12px 16px; margin-top: 12px;
-  transition: border-color 300ms var(--ease), transform 500ms var(--ease); animation: cs-rise 600ms var(--ease) backwards; }
-.cs-finding:hover { transform: translateY(-2px); border-color: var(--border-light); }
-.cs-finding.sev-critical-b { border-color: var(--border-error); }
+.cs-finding { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px 16px 12px 16px; margin-top: 12px;
+  transition: transform 500ms var(--ease), border-color 300ms var(--ease); animation: cs-rise 600ms var(--ease) backwards; transform-style: preserve-3d; }
+.cs-finding:hover { transform: translateY(-3px) rotateX(1.5deg); border-color: var(--raise); }
+.cs-finding.sev-critical-b { border-color: rgba(248, 113, 113, 0.5); box-shadow: var(--shadow), inset 3px 0 0 var(--critical); }
 .cs-finding .top { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-.cs-finding .loc { font-family: var(--mono) !important; font-size: 12px; line-height: 16px; color: var(--text-info);
-  background: var(--surface-accent-subtle); border: 1px solid var(--border-action); padding: 2px 8px; border-radius: 8px; }
-.cs-finding .ev { margin-top: 12px; background: var(--grayscale-1000); border: 1px solid var(--border-primary); border-radius: 8px; padding: 8px 12px;
-  font-family: var(--mono) !important; font-size: 12px; line-height: 16px; color: var(--text-primary); overflow-x: auto; white-space: pre; }
+.cs-finding .loc { font-family: var(--mono) !important; font-size: 12px; line-height: 16px; color: var(--accent2);
+  background: rgba(45, 212, 191, 0.08); border: 1px solid rgba(45, 212, 191, 0.25); padding: 2px 8px; border-radius: 8px; }
+.cs-finding .ev { margin-top: 12px; background: var(--deep); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px;
+  font-family: var(--mono) !important; font-size: 12px; line-height: 16px; color: var(--text); overflow-x: auto; white-space: pre; }
 
-.cs-callout { border: 1px solid var(--border-warning); background: var(--surface-warning-subtle); border-radius: 12px; padding: 12px 16px;
-  font-size: 14px; line-height: 20px; color: var(--text-primary); display: flex; gap: 8px; align-items: flex-start; }
-.cs-callout i { color: var(--icon-warning); font-size: 16px; margin-top: 2px; }
+.cs-callout { border: 1px solid rgba(251, 146, 60, 0.5); background: rgba(251, 146, 60, 0.08); border-radius: 12px; padding: 12px 16px;
+  font-size: 14px; line-height: 20px; color: var(--text); display: flex; gap: 8px; align-items: flex-start; }
+.cs-callout i { color: var(--high); font-size: 16px; margin-top: 2px; }
 .cs-callout + .cs-callout { margin-top: 8px; }
 
-.cs-timeline { background: var(--surface-primary); border: 1px solid var(--border-primary); border-radius: 16px; padding: 8px 16px; }
-.cs-step { display: flex; align-items: center; gap: 12px; font-size: 14px; line-height: 20px; color: var(--text-primary);
+.cs-timeline { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 8px 16px; }
+.cs-step { display: flex; align-items: center; gap: 12px; font-size: 14px; line-height: 20px; color: var(--text);
   padding: 8px 0; animation: cs-rise 500ms var(--ease) backwards; }
-.cs-step + .cs-step { border-top: 1px solid var(--border-primary); }
-.cs-step i { color: var(--icon-success); font-size: 16px; }
+.cs-step + .cs-step { border-top: 1px solid var(--line); }
+.cs-step i { color: var(--accent); font-size: 16px; }
 
-.cs-skel { border-radius: 8px; height: 16px; margin: 8px 0; background: var(--surface-secondary); animation: cs-pulse 1400ms var(--ease) infinite; }
+.cs-skel { border-radius: 8px; height: 16px; margin: 8px 0;
+  background: linear-gradient(90deg, var(--panel2) 0%, var(--raise) 50%, var(--panel2) 100%); background-size: 200% 100%;
+  animation: cs-shimmer 1400ms linear infinite; }
+@keyframes cs-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 .cs-skel.w60 { width: 60%; } .cs-skel.w40 { width: 40%; } .cs-skel.w80 { width: 80%; } .cs-skel.tall { height: 64px; }
-.cs-empty { text-align: center; padding: 48px 24px; border: 1px dashed var(--border-light); border-radius: 16px; background: var(--surface-primary); }
-.cs-empty .icon { width: 48px; height: 48px; margin: 0 auto 16px auto; border-radius: 12px; background: var(--surface-accent-subtle); display: flex;
-  align-items: center; justify-content: center; font-size: 24px; color: var(--icon-info); }
+.cs-empty { text-align: center; padding: 48px 24px; border: 1px dashed var(--line); border-radius: 16px; background: var(--panel); }
+.cs-empty .icon { width: 48px; height: 48px; margin: 0 auto 16px auto; border-radius: 12px; background: rgba(45, 212, 191, 0.12); display: flex;
+  align-items: center; justify-content: center; font-size: 24px; color: var(--accent); }
 
-.cs-footer { margin-top: 96px; padding: 32px 0; border-top: 1px solid var(--border-primary); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-.cs-footer a { color: var(--text-tertiary); font-size: 14px; line-height: 20px; transition: color 300ms var(--ease); }
-.cs-footer a:hover { color: var(--text-primary); }
+.cs-footer { margin-top: 96px; padding: 32px 0; border-top: 1px solid var(--line); display: flex; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap; }
+.cs-footer a { color: var(--muted); font-size: 14px; line-height: 20px; transition: color 300ms var(--ease); }
+.cs-footer a:hover { color: var(--accent2); }
 
 @keyframes cs-rise { from { opacity: 0; transform: translateY(32px); } to { opacity: 1; transform: none; } }
-@keyframes cs-pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
-.cs-code { font-family: var(--mono) !important; font-size: 12px; line-height: 16px; color: var(--text-info); background: var(--surface-accent-subtle);
-  padding: 2px 4px; border-radius: 4px; }
+@keyframes cs-pulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
 
-/* ---------- foundations view (figma-designer) ---------- */
-.cs-fd h4 { font-size: 20px !important; line-height: 28px !important; margin: 32px 0 12px 0; padding: 0; color: var(--text-primary); }
-.cs-fd .pal { display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 12px; align-items: center; margin-bottom: 8px; }
-.cs-fd .sw { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 4px; }
-.cs-fd .sw div { min-width: 52px; flex: 1; }
-.cs-fd .sw b { display: block; height: 40px; border-radius: 8px; border: 1px solid var(--border-primary); }
-.cs-fd .sw span { display: block; font-family: var(--mono) !important; font-size: 12px; line-height: 16px; color: var(--text-subtle); margin-top: 4px; }
-.cs-fd table { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 20px; }
-.cs-fd th { text-align: left; color: var(--text-tertiary); font-weight: 500; padding: 8px 12px; border-bottom: 1px solid var(--border-primary); }
-.cs-fd td { padding: 8px 12px; border-bottom: 1px solid var(--border-primary); color: var(--text-secondary); vertical-align: middle; }
-.cs-fd td.mode { font-family: var(--mono) !important; font-size: 12px; white-space: nowrap; }
-.cs-fd td.mode i { display: inline-block; width: 16px; height: 16px; border-radius: 4px; border: 1px solid var(--border-light); vertical-align: middle; margin-right: 8px; }
-.cs-fd .bars div { display: grid; grid-template-columns: 104px 48px minmax(0, 1fr); gap: 12px; align-items: center; margin-bottom: 4px;
-  font-family: var(--mono) !important; font-size: 12px; color: var(--text-tertiary); }
-.cs-fd .bars b { display: block; height: 12px; border-radius: 2px; background: var(--action-primary); }
-.cs-fd .radii { display: flex; flex-wrap: wrap; gap: 16px; }
-.cs-fd .radii div { text-align: center; font-family: var(--mono) !important; font-size: 12px; color: var(--text-tertiary); }
-.cs-fd .radii b { display: block; width: 64px; height: 64px; background: var(--surface-secondary); border: 1px solid var(--border-light); margin-bottom: 4px; }
-.cs-fd .ts div { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 16px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--border-primary); }
-.cs-fd .ts span { font-family: var(--mono) !important; font-size: 12px; color: var(--text-subtle); }
-.cs-fd .ts p { margin: 0; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cs-fd .btns { display: grid; grid-template-columns: 96px repeat(5, minmax(96px, 1fr)); gap: 8px; align-items: center; overflow-x: auto; }
-.cs-fd .btns .h { font-size: 12px; color: var(--text-tertiary); }
+.cs-code { font-family: var(--mono) !important; font-size: 12px; line-height: 16px; color: var(--accent2);
+  background: rgba(45, 212, 191, 0.1); padding: 2px 4px; border-radius: 4px; }
 
-/* ---------- sidebar ---------- */
-[data-testid="stSidebar"] { background: var(--surface-primary); border-right: none; }
+/* ---------- sidebar as a brand panel ---------- */
+[data-testid="stSidebar"] { background: var(--side); border-right: none; box-shadow: inset -1px 0 0 var(--line);
+  -webkit-backdrop-filter: var(--glass); backdrop-filter: var(--glass); }
 [data-testid="stSidebar"] > div { background: transparent; }
 .cs-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
-.cs-brand .mark { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-size: 24px; color: var(--text-inverted); background: var(--action-primary); }
-.cs-brand .name { font-size: 20px; line-height: 28px; font-weight: 600; color: var(--text-primary); }
-.cs-brand .sub { font-size: 12px; line-height: 16px; color: var(--text-tertiary); }
-.cs-side-h { font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-tertiary); margin: 24px 0 8px 0; }
-.cs-srow { display: flex; gap: 12px; align-items: flex-start; padding: 8px 12px; border-radius: 12px; background: var(--surface-subtle);
-  border: 1px solid var(--border-primary); margin-bottom: 8px; }
-.cs-srow .ico { width: 28px; height: 28px; flex: none; border-radius: 4px; display: grid; place-items: center; font-size: 16px; color: var(--icon-info); background: var(--surface-accent-subtle); }
-.cs-srow .k { font-size: 12px; line-height: 16px; color: var(--text-subtle); }
-.cs-srow .v { font-size: 14px; line-height: 20px; color: var(--text-primary); word-break: break-word; }
-.cs-slink { display: flex; gap: 8px; align-items: center; padding: 4px 0; font-size: 14px; line-height: 20px; color: var(--text-tertiary) !important; transition: color 300ms var(--ease); }
-.cs-slink:hover { color: var(--text-primary) !important; }
+.cs-brand .mark { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-size: 24px; color: #04131B;
+  background: linear-gradient(135deg, #5EEAD4, #2DD4BF 55%, #0EA5E9); box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.18); }
+.cs-brand .name { font-size: 20px; line-height: 28px; font-weight: 600; color: #fff; }
+.cs-brand .sub { font-size: 12px; line-height: 16px; color: var(--muted); }
+.cs-side-h { font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+  margin: 24px 0 8px 0; }
+.cs-srow { display: flex; gap: 12px; align-items: flex-start; padding: 8px 12px; border-radius: 12px; background: var(--panel);
+  border: 1px solid var(--line); margin-bottom: 8px; }
+.cs-srow .ico { width: 28px; height: 28px; flex: none; border-radius: 8px; display: grid; place-items: center; font-size: 16px;
+  color: var(--accent); background: rgba(45, 212, 191, 0.12); }
+.cs-srow .k { font-size: 12px; line-height: 16px; color: var(--dim); }
+.cs-srow .v { font-size: 14px; line-height: 20px; color: var(--text); }
+.cs-slink { display: flex; gap: 8px; align-items: center; padding: 4px 0; font-size: 14px; line-height: 20px; color: var(--muted) !important;
+  transition: color 300ms var(--ease); }
+.cs-slink:hover { color: var(--accent2) !important; }
 
-/* ---------- Streamlit widgets bound to the same tokens ---------- */
+/* ---------- Streamlit widgets ---------- */
 [data-baseweb="tab"] p, [data-testid="stPills"] button, [data-testid="stPills"] button p, [data-testid="stSegmentedControl"] button p,
 [data-testid="stExpander"] summary p, [data-testid="stWidgetLabel"] p, .stCheckbox p, .stToggle p {
   font-family: 'Geist', ui-sans-serif, system-ui, sans-serif !important; }
 .stButton > button, .stDownloadButton > button, .stFormSubmitButton > button {
   padding: 8px 12px !important; border-radius: 12px !important; font-weight: 600 !important; min-height: 0 !important;
-  background: var(--action-secondary); color: var(--text-primary); border: 1px solid var(--border-light) !important;
-  transition: background-color 300ms var(--ease), border-color 300ms var(--ease), transform 500ms var(--ease) !important; }
-.stButton > button:hover, .stDownloadButton > button:hover, .stFormSubmitButton > button:hover { background: var(--action-secondary-hover); color: var(--text-primary); }
-.stButton > button:active, .stDownloadButton > button:active { background: var(--action-secondary-click); transform: scale(0.98); }
-.stButton > button:focus-visible, .stDownloadButton > button:focus-visible { outline: 2px solid var(--border-action) !important; outline-offset: 2px; }
-.stButton > button[kind="primary"] { background: var(--action-primary) !important; color: var(--text-inverted) !important; border-color: var(--action-primary) !important; }
-.stButton > button[kind="primary"]:hover { background: var(--action-primary-hover) !important; border-color: var(--action-primary-hover) !important; }
-.stButton > button[kind="primary"]:active { background: var(--action-primary-click) !important; }
-.stButton > button[kind="tertiary"] { background: transparent; border-color: transparent !important; color: var(--text-info); }
-.stButton > button[kind="tertiary"]:hover { background: var(--surface-primary-hover); }
+  border: 1px solid var(--line) !important; background: rgba(14, 34, 56, 0.82); color: var(--text);
+  transition: transform 500ms var(--ease), background-color 300ms var(--ease), border-color 300ms var(--ease), color 300ms var(--ease) !important; }
+.stButton > button:hover, .stDownloadButton > button:hover, .stFormSubmitButton > button:hover {
+  transform: translateY(-1px); background: var(--raise); border-color: var(--accent) !important; color: var(--accent2); }
+.stButton > button:active, .stDownloadButton > button:active { transform: scale(0.98); }
+.stButton > button:focus-visible, .stDownloadButton > button:focus-visible { outline: 2px solid var(--accent) !important; outline-offset: 2px; }
+.stButton > button[kind="primary"] { background: var(--accent) !important; color: #04131B !important; border-color: var(--accent) !important; }
+.stButton > button[kind="primary"]:hover { background: var(--accent2) !important; border-color: var(--accent2) !important; color: #04131B !important; }
 .stButton > button:disabled { opacity: 0.4; transform: none; }
-.st-key-reject_report button { background: var(--action-error) !important; border-color: var(--action-error) !important; color: #FFFFFF !important; }
-.st-key-reject_report button:hover { background: var(--action-error-hover) !important; }
-.st-key-clear_caches button { background: var(--action-warning) !important; border-color: var(--action-warning) !important; color: var(--text-inverted) !important; }
-.st-key-clear_caches button:hover { background: var(--action-warning-hover) !important; }
-[data-testid="stExpander"] details { border-radius: 16px !important; border: 1px solid var(--border-primary) !important; background: var(--surface-primary); }
+[data-testid="stExpander"] details { border-radius: 16px !important; border: 1px solid var(--line) !important; background: var(--panel); }
 [data-testid="stExpander"] summary { font-weight: 500; }
-[data-testid="stTabs"] [role="tablist"], .stTabs [data-baseweb="tab-list"] { gap: 4px; background: var(--surface-primary); border: 1px solid var(--border-primary) !important;
-  border-radius: 16px; padding: 4px; width: fit-content; max-width: 100%; }
-[data-testid="stTab"], .stTabs [data-baseweb="tab"] { padding: 8px 16px !important; border-radius: 12px; color: var(--text-tertiary); border: none !important;
-  box-shadow: none !important; height: auto; transition: background-color 300ms var(--ease), color 300ms var(--ease); }
-[data-testid="stTab"]::after, [data-testid="stTab"]::before, .stTabs [data-baseweb="tab-highlight"], .stTabs [data-baseweb="tab-border"] { display: none !important; }
-[data-testid="stTab"]:hover { color: var(--text-primary); }
-[data-testid="stTab"][aria-selected="true"], .stTabs [aria-selected="true"] { background: var(--surface-secondary); color: var(--text-primary); }
+[data-testid="stExpander"] summary:hover { color: var(--accent2); }
+.stTabs [data-baseweb="tab-list"] { gap: 4px; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 4px;
+  width: fit-content; max-width: 100%; }
+.stTabs [data-baseweb="tab"] { font-weight: 500; padding: 8px 16px; border-radius: 12px; height: auto; color: var(--muted);
+  transition: background-color 300ms var(--ease), color 300ms var(--ease); }
+.stTabs [data-baseweb="tab"]:hover { color: #fff; }
+.stTabs [aria-selected="true"] { background: var(--raise) !important; color: #fff !important; }
+.stTabs [data-baseweb="tab-highlight"], .stTabs [data-baseweb="tab-border"] { display: none; }
+/* newer Streamlit renders tabs with react aria */
+[data-testid="stTabs"] [role="tablist"] { gap: 4px; background: var(--panel); border: 1px solid var(--line) !important; border-radius: 16px;
+  padding: 4px; width: fit-content; max-width: 100%; -webkit-backdrop-filter: var(--glass); backdrop-filter: var(--glass); box-shadow: var(--shadow); }
+[data-testid="stTab"] { padding: 8px 16px !important; border-radius: 12px; color: var(--muted); border: none !important; box-shadow: none !important;
+  transition: background-color 300ms var(--ease), color 300ms var(--ease); }
+[data-testid="stTab"]::after, [data-testid="stTab"]::before { display: none !important; }
+[data-testid="stTab"]:hover { color: #fff; }
+[data-testid="stTab"][aria-selected="true"] { background: var(--raise); color: #fff; }
 [data-testid="stTab"] p { font-weight: 500; }
-[data-baseweb="textarea"], [data-baseweb="input"], [data-baseweb="select"] > div { border-radius: 12px !important; background: var(--surface-primary) !important;
-  border-color: var(--border-primary) !important; transition: border-color 300ms var(--ease); }
-[data-baseweb="textarea"]:focus-within, [data-baseweb="input"]:focus-within { border-color: var(--border-action) !important; }
-[data-testid="stDataFrame"] { border: 1px solid var(--border-primary); border-radius: 12px; overflow: hidden; }
+[data-baseweb="textarea"], [data-baseweb="input"], [data-baseweb="select"] > div { border-radius: 12px !important;
+  background: rgba(6, 18, 32, 0.88) !important; border-color: var(--line) !important; transition: border-color 300ms var(--ease); }
+[data-baseweb="textarea"]:focus-within, [data-baseweb="input"]:focus-within { border-color: var(--accent) !important; }
+[data-testid="stTextInput"] input, [data-testid="stTextArea"] textarea { border-radius: 12px !important; }
+[data-testid="stDataFrame"] { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
 [data-testid="stAlert"] { border-radius: 16px; }
-[data-testid="stFileUploaderDropzone"] { background: var(--surface-primary); border: 1px dashed var(--border-light); border-radius: 16px; }
+[data-testid="stFileUploaderDropzone"] { background: var(--panel); border: 1px dashed var(--line); border-radius: 16px; }
 
 /* ---------- responsive (390px check) ---------- */
 @media (max-width: 900px) {
-  .cs-bento { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .cs-zz { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 32px 0; }
-  .cs-zz.rev .txt { order: 0; }
+  .cs-hero { padding: 32px 16px; gap: 32px; }
+  .cs-preview { transform: none; }
   .cs-scoreboard { grid-template-columns: minmax(0, 1fr); }
-  .heading-1, .cs-h1 { font-size: 36px; line-height: 40px; }
-  .cs-tagline p { font-size: 36px; line-height: 40px; }
-  .heading-3 { font-size: 30px; line-height: 36px; }
+  .cs-h1 { font-size: 36px; line-height: 40px; }
+  .cs-tagline p { font-size: 30px; line-height: 36px; }
+  .cs-section h2.title { font-size: 30px; line-height: 36px; }
   .cs-nav .links, .cs-nav .cs-chip { display: none; }
   .cs-nav { max-width: calc(100% - 32px); gap: 16px; left: 50% !important; }
+  .cs-bg3d .orb, .cs-bg3d .ring { display: none; }
   .block-container { padding-top: 80px; }
-  .cs-fd .ts div { grid-template-columns: minmax(0, 1fr); gap: 4px; }
 }
-@media (max-width: 560px) {
-  .cs-bento { grid-template-columns: minmax(0, 1fr); }
-  .cs-tile.big, .cs-tile.wide { grid-column: auto; grid-row: auto; }
-  .cs-tile .num.xl { font-size: 60px; line-height: 60px; }
-}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: opacity 200ms linear !important; }
   .cs-tagline .w { opacity: 1 !important; }
@@ -518,7 +394,12 @@ a, a:hover, a:visited, [data-testid="stMarkdownContainer"] a { text-decoration: 
 </style>
 """
 
+BACKGROUND = """<div class="cs-bg3d" aria-hidden="true"><div class="aurora a1"></div><div class="aurora a2"></div>
+<div class="aurora a3"></div><div class="ring"></div><div class="orb o1"></div><div class="orb o2"></div>
+<div class="orb o3"></div><div class="orb o4"></div><div class="floor"></div></div>"""
+
 SEV_ORDER = ["critical", "high", "medium", "low", "info"]
+SEV_COLOR = {"critical": "#F87171", "high": "#FB923C", "medium": "#FACC15", "low": "#60A5FA", "info": "#A3A3A3"}
 SEV_ICON = {"critical": "ph-warning-octagon", "high": "ph-warning", "medium": "ph-warning-circle", "low": "ph-info", "info": "ph-note"}
 VERDICT_ICON = {"block": "ph-prohibit", "request_changes": "ph-arrow-u-up-left", "approve_with_comments": "ph-chat-circle-text",
                 "approve": "ph-check-circle"}
@@ -528,6 +409,7 @@ AGENT_ICON = {"bugs": "ph-bug-beetle", "security": "ph-shield-warning", "tests":
 PIPE_NODES = [("intake", "ph-tray-arrow-down", "Intake"), ("plan", "ph-strategy", "Plan"), ("gate1", "ph-user-check", "You approve"),
               ("agents", "", ""), ("aggregate", "ph-stack", "Report"), ("gate2", "ph-hand", "You approve"),
               ("actions", "ph-lightning", "Actions")]
+e = html.escape
 
 
 def inline_code(text: str) -> str:
@@ -560,6 +442,7 @@ def brand() -> str:
 
 
 def side_status(rows: list[tuple[str, str, str]]) -> str:
+    """Sidebar status rows: (phosphor icon, label, value)."""
     body = "".join(f'<div class="cs-srow"><span class="ico"><i class="ph {i}"></i></span><div><div class="k">{e(k)}</div>'
                    f'<div class="v">{e(v)}</div></div></div>' for i, k, v in rows)
     return f'<div class="cs-side-h">System status</div>{body}'
@@ -573,15 +456,19 @@ def side_links(repo_url: str) -> str:
 
 
 def pipeline(done: set[str] | frozenset = frozenset(), active: str | None = None, skipped: set[str] | frozenset = frozenset()) -> str:
-    """The review graph as a strip of nodes. State is shown by icon and label, never by color alone."""
+    """The review graph as a strip of nodes. Agent keys are bugs, security and tests."""
     def node(key: str, icon: str, label: str) -> str:
+        cls = "cs-node"
+        if key.startswith("gate"):
+            cls += " gate"
         if key in done:
-            return f'<div class="cs-node done"><i class="ph-fill ph-check-circle"></i> {label}</div>'
-        if key == active:
-            return f'<div class="cs-node active"><i class="ph ph-hourglass-medium"></i> {label} <small>· waiting</small></div>'
-        if key in skipped:
-            return f'<div class="cs-node skip"><i class="ph ph-minus-circle"></i> {label}</div>'
-        return f'<div class="cs-node"><i class="ph {icon}"></i> {label}</div>'
+            cls += " done"
+        elif key == active:
+            cls += " active"
+        elif key in skipped:
+            cls += " skip"
+        mark = '<i class="ph-fill ph-check-circle"></i>' if key in done else f'<i class="ph {icon}"></i>'
+        return f'<div class="{cls}">{mark} {label}</div>'
 
     parts = []
     for i, (key, icon, label) in enumerate(PIPE_NODES):
@@ -596,24 +483,30 @@ def pipeline(done: set[str] | frozenset = frozenset(), active: str | None = None
 
 
 def hero() -> str:
-    return """
+    chips = [("ph-graph", "3 agents", "on LangGraph"), ("ph-ruler", "29 rules", "as evidence"), ("ph-plugs-connected", "MCP", "server"),
+             ("ph-brain", "Team memory", "Mem0 ready"), ("ph-user-check", "2 human", "approvals")]
+    chip_html = "".join(f'<span class="cs-hchip"><i class="ph {i}"></i><b>{b}</b>{t}</span>' for i, b, t in chips)
+    return f"""
 <section class="cs-hero" aria-label="Introduction">
   <div>
-    <h1 class="cs-h1 heading-1">Catch the bugs your<br>reviewers miss<br>before you merge</h1>
+    <span class="cs-eyebrow"><span class="dot"></span>Week 3 project · Multi agent code review</span>
+    <div class="cs-h1">Catch the bugs your<br>reviewers miss,<br>before you merge.</div>
     <div class="cs-sub">Three specialist agents check every change for bugs, security holes and missing tests
     at the same time. You approve the plan, you approve the report, and nothing ships without you.</div>
     <div class="cs-actions">
-      <a class="cs-b t-primary" href="#workspace"><i class="ph ph-play"></i>Run a free review</a>
-      <a class="cs-b t-tertiary" href="#how-it-works">See how it works<i class="ph ph-arrow-down"></i></a>
+      <a class="cs-btn primary" href="#workspace"><i class="ph ph-play"></i>Run a free review</a>
+      <a class="cs-btn ghost" href="#how-it-works"><i class="ph ph-graph"></i>See how it works</a>
     </div>
     <div class="cs-proofline"><i class="ph-fill ph-seal-check"></i>Found 31 of 31 seeded issues with 100% precision in our evals</div>
+    <div class="cs-chips">{chip_html}</div>
   </div>
+  <div class="cs-hero-visual">
   <div class="cs-preview" role="img" aria-label="Preview of a CodeSentinel review report">
     <div class="chrome"><span></span><span></span><span></span><span class="path caption-5 mono">payments.py · review report</span></div>
     <div class="pane">
       <div class="row">
-        <div><div class="caption-3">Verdict</div><div class="heading-6 verdict-block" style="margin-top:4px"><i class="ph ph-prohibit"></i> Blocked</div></div>
-        <div style="text-align:right"><div class="caption-3">Quality score</div><div class="heading-6 mono" style="margin-top:4px">22 <span class="caption-5">/ 100</span></div></div>
+        <div><div class="caption-3">Verdict</div><div class="heading-6 verdict-block" style="margin-top:4px">Blocked</div></div>
+        <div style="text-align:right"><div class="caption-3">Quality score</div><div class="heading-6" style="margin-top:4px">22 <span class="caption-5">/ 100</span></div></div>
       </div>
       <div class="cs-sevbar" style="margin:12px 0 0 0"><span style="width:44%;background:#F87171"></span><span style="width:12%;background:#FACC15"></span><span style="width:44%;background:#60A5FA"></span></div>
     </div>
@@ -621,8 +514,8 @@ def hero() -> str:
       <div class="ln"><span class="no">32</span><span class="c"><span class="k">def</span> <span class="f">refund</span>(order_id, token):</span><span></span></div>
       <div class="ln hit"><span class="no">33</span><span class="c">    claims = jwt.<span class="f">decode</span>(token, verify=<span class="k">False</span>)</span><i class="ph-fill ph-warning-octagon flag"></i></div>
       <div class="ln"><span class="no">34</span><span class="c">    amount = <span class="f">float</span>(order[<span class="s">"total"</span>])</span><span></span></div>
-      <div class="ln hit"><span class="no">50</span><span class="c">    os.<span class="f">system</span>(<span class="s">f"refund {order_id}"</span>)</span><i class="ph-fill ph-warning-octagon flag"></i></div>
-      <div class="ln"><span class="no">51</span><span class="c">    <span class="k">return</span> {<span class="s">"ok"</span>: <span class="k">True</span>}</span><span></span></div>
+      <div class="ln hit"><span class="no">50</span><span class="c">    os.<span class="f">system</span>(<span class="s">f"refund {{order_id}}"</span>)</span><i class="ph-fill ph-warning-octagon flag"></i></div>
+      <div class="ln"><span class="no">51</span><span class="c">    <span class="k">return</span> {{<span class="s">"ok"</span>: <span class="k">True</span>}}</span><span></span></div>
       <div class="beam"></div>
     </div>
     <div class="pane">
@@ -631,53 +524,38 @@ def hero() -> str:
       <div class="finding"><span class="cs-badge sev-critical"><i class="ph ph-warning-octagon"></i>Critical</span>
         <div><div class="title-4">Shell command injection risk</div><div class="caption-5 mono">payments.py:50 · CWE 78</div></div></div>
     </div>
-  </div>
-</section>
-<section class="cs-bento cs-reveal" aria-label="Results">
-  <div class="cs-tile big">
-    <div><div class="caption-3">Seeded issues found</div><div class="num xl" style="margin-top:12px">31/31</div>
-    <div class="body-6" style="margin-top:8px">Line level ground truth across three sample services, rule based mode</div></div>
-    <div class="cs-bars">
-      <div class="r"><span class="caption-1">Loyalty portal API</span><span class="caption-4 mono">12/12</span><div class="track"><i style="width:100%"></i></div></div>
-      <div class="r"><span class="caption-1">Inventory sync pipeline</span><span class="caption-4 mono">12/12</span><div class="track"><i style="width:100%"></i></div></div>
-      <div class="r"><span class="caption-1">Checkout refunds with tests</span><span class="caption-4 mono">7/7</span><div class="track"><i style="width:100%"></i></div></div>
+    <div class="pane agents">
+      <div class="agent"><div class="caption-4"><i class="ph ph-bug-beetle"></i> Bugs</div><div class="title-4">done</div></div>
+      <div class="agent"><div class="caption-4"><i class="ph ph-shield-warning"></i> Security</div><div class="title-4">done</div></div>
+      <div class="agent"><div class="caption-4"><i class="ph ph-flask"></i> Tests</div><div class="title-4">done</div></div>
     </div>
   </div>
-  <div class="cs-tile"><span class="ico"><i class="ph ph-crosshair"></i></span><div><div class="num">100%</div><div class="body-6">precision on bug and security findings</div></div></div>
-  <div class="cs-tile"><span class="ico"><i class="ph ph-ruler"></i></span><div><div class="num">29</div><div class="body-6">grounded rules the agents use as evidence</div></div></div>
-  <div class="cs-tile wide"><div><div class="caption-3">Human approvals</div><div class="num" style="margin-top:12px">2</div></div>
-    <div class="body-6">One before the agents run, one before anything is saved, posted or remembered</div></div>
+  </div>
+</section>
+<section class="cs-grid-4 cs-reveal" aria-label="Results">
+  <div class="cs-stat"><div class="num">31/31</div><div class="body-6">seeded issues found across three sample services</div></div>
+  <div class="cs-stat"><div class="num">100%</div><div class="body-6">precision on bug and security findings</div></div>
+  <div class="cs-stat"><div class="num">29</div><div class="body-6">grounded rules the agents use as evidence</div></div>
+  <div class="cs-stat"><div class="num">2</div><div class="body-6">human approval points before anything is written</div></div>
 </section>"""
 
 
 def how_it_works() -> str:
-    plan = """<div class="cs-mini"><div class="caption-3">Review plan · risk high</div>
-<div class="line" style="margin-top:12px"><i class="ph ph-bug-beetle"></i>Bug and anti pattern agent<span class="ok"><i class="ph-fill ph-check-circle"></i></span></div>
-<div class="line"><i class="ph ph-shield-warning"></i>Security agent<span class="ok"><i class="ph-fill ph-check-circle"></i></span></div>
-<div class="line"><i class="ph ph-target"></i>Focus: authorization on every route</div></div>"""
-    agents = """<div class="cs-mini"><div class="caption-3">Running in parallel</div>
-<div class="line" style="margin-top:12px"><i class="ph ph-bug-beetle"></i>Bugs · read_code<span class="run"><i></i></span></div>
-<div class="line"><i class="ph ph-shield-warning"></i>Security · run_static_checks<span class="run"><i style="animation-delay:-500ms"></i></span></div>
-<div class="line"><i class="ph ph-flask"></i>Tests · list_functions<span class="run"><i style="animation-delay:-1000ms"></i></span></div></div>"""
-    approve = """<div class="cs-mini"><div class="caption-3">Approve actions</div>
-<div class="line" style="margin-top:12px"><span class="cs-check on"><i class="ph ph-check"></i></span>Save the report</div>
-<div class="line"><span class="cs-check"></span>Post the pull request comment</div>
-<div class="line"><span class="cs-check on"><i class="ph ph-check"></i></span>Remember my feedback</div>
-<div style="margin-top:12px"><span class="cs-b t-primary sm"><i class="ph ph-check"></i>Approve and run actions</span></div></div>"""
-    rows = [
-        ("01", "The orchestrator plans", "It reads the change, rates the risk and decides which specialists run. The graph pauses so you can edit or approve the plan.", plan, False),
-        ("02", "Three agents work in parallel", "Bug, security and test agents each run a reasoning loop with read only tools, and quote the exact line for every claim they make.", agents, True),
-        ("03", "You decide what ships", "Findings arrive ranked with a score and a verdict. Dismiss false positives, then tick only the actions you want to run.", approve, False),
+    steps = [
+        ("ph-strategy", "01", "The orchestrator plans", "It reads the change, rates the risk and decides which specialists run. You approve or edit the plan."),
+        ("ph-users-three", "02", "Three agents work in parallel", "Bug, security and test agents each run a reasoning loop with read only tools and quote the exact line for every claim."),
+        ("ph-user-check", "03", "You decide what ships", "Findings arrive ranked with a score and verdict. Dismiss false positives, then approve saving, posting and remembering."),
     ]
-    body = "".join(f'<div class="cs-zz{" rev" if rev else ""}"><div class="txt"><div class="n">{n}</div><h3>{t}</h3>'
-                   f'<div class="body-3" style="max-width:480px">{d}</div></div><div>{v}</div></div>' for n, t, d, v, rev in rows)
+    cards = "".join(
+        f'<div class="cs-step-card"><span class="caption-5 n mono">{n}</span><div class="icon"><i class="ph {i}"></i></div>'
+        f'<div class="title-2">{t}</div><div class="body-6" style="margin-top:8px">{d}</div></div>' for i, n, t, d in steps)
     return f"""
 <section class="cs-section cs-reveal" id="how-it-works">
   <div class="kicker caption-3"><i class="ph ph-graph"></i>How it works</div>
-  <h2 class="title heading-3">A review team that never<br>skips the checklist</h2>
+  <h2 class="title">A review team that never skips the checklist</h2>
   <div class="body-3" style="max-width:680px">Built as a LangGraph state machine with checkpoints, so a review can pause for you and resume exactly where it stopped.</div>
-  <div style="margin-top:16px">{body}</div>
-  {pipeline()}
+  <div class="cs-grid-3">{cards}</div>
+  <div style="margin-top:16px">{pipeline()}</div>
 </section>"""
 
 
@@ -694,55 +572,25 @@ def tagline() -> str:
 
 
 def benefits() -> str:
-    return """
-<section class="cs-section cs-reveal" aria-label="Benefits">
-  <div class="kicker caption-3"><i class="ph ph-sparkle"></i>Why teams keep it</div>
-  <h2 class="title heading-3">Built for reviews<br>you can trust</h2>
-  <div class="cs-bento" style="margin-top:32px">
-    <div class="cs-tile wide"><div><span class="ico"><i class="ph ph-crosshair"></i></span>
-      <div class="title-2" style="margin-top:16px">Grounded, not guessed</div>
-      <div class="body-6" style="margin-top:8px">Every finding quotes the real line. Claims whose quote is not in the file are dropped and counted on the Monitor tab.</div></div>
-      <div class="cs-finding" style="margin:0;animation:none"><div class="top"><span class="loc">app.py:13</span><span class="cs-chip ok"><i class="ph ph-check"></i>evidence found in file</span></div>
-      <div class="ev">app.config["SECRET_KEY"] = "f9c2e71be04d..."</div></div>
-    </div>
-    <div class="cs-tile wide"><div><span class="ico"><i class="ph ph-brain"></i></span>
-      <div class="title-2" style="margin-top:16px">Remembers your team</div>
-      <div class="body-6" style="margin-top:8px">Dismiss a false positive once and it stays dismissed. Conventions you add feed every agent prompt for that project.</div></div>
-      <div class="cs-stack"><span class="cs-tag"><i class="ph ph-book-open"></i>Money uses Decimal</span><span class="cs-tag"><i class="ph ph-eye-slash"></i>1 finding suppressed</span></div>
-    </div>
-    <div class="cs-tile wide"><div><span class="ico"><i class="ph ph-plugs-connected"></i></span>
-      <div class="title-2" style="margin-top:16px">Fits the tools you use</div>
-      <div class="body-6" style="margin-top:8px">The same graph runs as an MCP server for Claude Desktop, Claude Code or Cursor, and an A2A agent card describes its skills.</div></div>
-      <div class="cs-stack"><span class="cs-tag"><i class="ph ph-terminal"></i>review_code</span><span class="cs-tag"><i class="ph ph-github-logo"></i>review_github</span><span class="cs-tag"><i class="ph ph-shield"></i>scan_security</span></div>
-    </div>
-    <div class="cs-tile wide"><div><span class="ico"><i class="ph ph-lifebuoy"></i></span>
-      <div class="title-2" style="margin-top:16px">Works when the model fails</div>
-      <div class="body-6" style="margin-top:8px">Retries, a backup provider, JSON repair and a rule based fallback keep every review running, and the monitor shows which path ran.</div></div>
-      <div class="cs-stack"><span class="cs-tag">Retry</span><span class="cs-tag">Backup model</span><span class="cs-tag">JSON repair</span><span class="cs-tag">Rules</span></div>
-    </div>
-  </div>
-</section>"""
-
-
-def risk_reversal() -> str:
-    items = [("ph-key", "No API key needed", "Runs in rule based mode out of the box. Add a key to switch on the LLM agents."),
-             ("ph-eye", "Read only agents", "Agents never edit code, post or run what they review."),
-             ("ph-hand", "You approve every write", "Saving, posting and remembering wait for your tick, and criticals need an acknowledgement."),
-             ("ph-terminal-window", "Run it yourself", "Clone the repository and start it with uv in one command.")]
-    cells = "".join(f'<div class="it"><i class="ph-fill {i}"></i><div><div class="title-3">{t}</div>'
-                    f'<div class="body-6" style="margin-top:4px">{d}</div></div></div>' for i, t, d in items)
-    return f'<section class="cs-section cs-reveal" aria-label="What you risk"><div class="cs-band">{cells}</div></section>'
+    items = [
+        ("ph-crosshair", "Grounded, not guessed", "Every finding quotes the real line. Claims that do not match the code are dropped and counted."),
+        ("ph-brain", "Remembers your team", "Dismiss a false positive once and it stays dismissed. Conventions feed every agent prompt."),
+        ("ph-lifebuoy", "Works when the model fails", "Retries, a backup model and rule based fallbacks keep the review running, and the monitor shows it."),
+    ]
+    cards = "".join(f'<div class="cs-step-card"><div class="icon"><i class="ph {i}"></i></div><div class="title-2">{t}</div>'
+                    f'<div class="body-6" style="margin-top:8px">{d}</div></div>' for i, t, d in items)
+    return f'<section class="cs-section cs-reveal"><div class="cs-grid-3" style="margin-top:0">{cards}</div></section>'
 
 
 def section_head(anchor: str, icon: str, kicker: str, title: str, body: str = "") -> str:
     return (f'<section class="cs-section" id="{anchor}" style="margin-bottom:24px"><div class="kicker caption-3"><i class="ph {icon}"></i>{kicker}</div>'
-            f'<h2 class="title heading-3">{title}</h2>' + (f'<div class="body-3" style="max-width:680px">{body}</div>' if body else "") + "</section>")
+            f'<h2 class="title">{title}</h2>' + (f'<div class="body-3" style="max-width:680px">{body}</div>' if body else "") + "</section>")
 
 
 def footer(repo_url: str) -> str:
     return f"""
 <footer class="cs-footer">
-  <div><div class="title-4"><i class="ph-fill ph-shield-check" style="color:var(--icon-info)"></i> CodeSentinel</div>
+  <div><div class="title-4"><i class="ph-fill ph-shield-check" style="color:var(--accent)"></i> CodeSentinel</div>
   <div class="caption-5" style="margin-top:4px">Week 3 project by Bala · Mastering Agentic AI, The Gen Academy</div></div>
   <div style="display:flex;gap:24px;flex-wrap:wrap">
     <a href="{repo_url}" target="_blank" rel="noopener"><i class="ph ph-github-logo"></i> Source code</a>
@@ -753,53 +601,19 @@ def footer(repo_url: str) -> str:
 </footer>"""
 
 
-def foundations() -> str:
-    """The Foundations frame from figma-designer, rendered from the same tokens the CSS uses."""
-    pals = "".join(
-        f'<div class="pal"><div class="title-4">{p}</div><div class="sw">' + "".join(
-            f'<div><b style="background:{h}"></b><span>{s}</span></div>' for s, h in shades.items()) + "</div></div>"
-        for p, shades in CORE.items())
-    rows = []
-    for toks in SYSTEM.values():
-        for name, _var, dark, light in toks:
-            rows.append(f'<tr><td>{e(name)}</td><td class="mode"><i style="background:{resolve(dark)}"></i>{dark}</td>'
-                        f'<td class="mode"><i style="background:{resolve(light)}"></i>{light}</td></tr>')
-    table = f'<table><tr><th>Token</th><th>Dark</th><th>Light</th></tr>{"".join(rows)}</table>'
-    bars = "".join(f'<div><span>{n}</span><span>{v}px</span><b style="width:{max(v, 1)}px"></b></div>' for n, v in SPACING)
-    radii = "".join(f'<div><b style="border-radius:{min(v, 32)}px"></b>{n}</div>' for n, v in RADIUS)
-    styles = "".join(f'<div><span>{n} · {s}/{lh} · {w}</span><p style="font-size:{s}px;line-height:{lh}px;font-weight:{w}">Catch the bugs your reviewers miss</p></div>'
-                     for n, s, lh, w in TEXT_STYLES)
-    states = ["default", "hover", "pressed", "focus", "disabled"]
-    btns = '<div class="h"></div>' + "".join(f'<div class="h">{s.title()}</div>' for s in states)
-    for t in ["primary", "secondary", "tertiary", "error", "warning"]:
-        btns += f'<div class="h">{t.title()}</div>' + "".join(
-            f'<span class="cs-b sm t-{t} s-{s}" role="presentation">Approve</span>' for s in states)
-    return f"""<div class="cs-fd">
-<div class="body-6">Rendered from the design tokens in <code class="cs-code">codesentinel/ui_style.py</code>. Change a Core Color there and every swatch,
-token and component on this page follows, the same way the Foundations frame works in the figma-designer skill.</div>
-<h4>Core Colors</h4>{pals}
-<h4>Color System · Dark and Light modes</h4><div class="cs-card" style="padding:0;overflow-x:auto">{table}</div>
-<h4>Buttons · 5 types × 5 states</h4><div class="cs-card"><div class="btns">{btns}</div></div>
-<h4>Spacing</h4><div class="cs-card bars">{bars}</div>
-<h4>Radius</h4><div class="cs-card radii">{radii}</div>
-<h4>Text styles</h4><div class="cs-card ts">{styles}</div>
-</div>"""
-
-
 def score_ring(score: int, verdict: str, previous: int | None) -> str:
     r, c = 52, 2 * 3.14159 * 52
-    color = {"block": resolve("Red/400"), "request_changes": "#FB923C", "approve_with_comments": resolve("Yellow/400"),
-             "approve": resolve("Green/400")}[verdict]
+    color = {"block": "#F87171", "request_changes": "#FB923C", "approve_with_comments": "#FACC15", "approve": "#2DD4BF"}[verdict]
     off = c * (1 - score / 100)
     prev = f'<div class="caption-5">previous review {previous}</div>' if previous is not None else '<div class="caption-5">first review</div>'
     return f"""
 <div class="cs-ring">
   <svg width="128" height="128" viewBox="0 0 128 128" aria-label="Quality score {score} of 100">
     <circle class="track" cx="64" cy="64" r="{r}" fill="none" stroke-width="10"/>
-    <circle class="val" cx="64" cy="64" r="{r}" fill="none" stroke="{color}" stroke-width="10" stroke-linecap="round"
+    <circle class="val" cx="64" cy="64" r="{r}" fill="none" stroke="{color}" color="{color}" stroke-width="10" stroke-linecap="round"
       stroke-dasharray="{c:.1f}" stroke-dashoffset="{off:.1f}" style="--c:{c:.1f}" transform="rotate(-90 64 64)"/>
-    <text x="64" y="62" text-anchor="middle" fill="#F7F7F7" font-family="Geist Mono" font-size="30" font-weight="600">{score}</text>
-    <text x="64" y="82" text-anchor="middle" fill="#9B9B9B" font-family="Geist" font-size="12">of 100</text>
+    <text x="64" y="62" text-anchor="middle" fill="#FFFFFF" font-family="Geist Mono" font-size="30" font-weight="600">{score}</text>
+    <text x="64" y="82" text-anchor="middle" fill="#9DBBCB" font-family="Geist" font-size="12">of 100</text>
   </svg>
   {prev}
 </div>"""
@@ -819,7 +633,7 @@ def scoreboard(report: dict) -> str:
     <div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap">
       <div><div class="caption-3">Verdict</div>
         <div class="heading-4 verdict-{v}" style="margin-top:4px"><i class="ph {VERDICT_ICON[v]}"></i> {VERDICT_LABEL[v]}</div></div>
-      <div style="text-align:right"><div class="caption-3">Findings</div><div class="heading-4 mono" style="margin-top:4px;color:var(--text-primary)">{len(report["findings"])}</div></div>
+      <div style="text-align:right"><div class="caption-3">Findings</div><div class="heading-4 mono" style="margin-top:4px;color:#fff">{len(report["findings"])}</div></div>
     </div>
     <div class="cs-sevbar">{bar}</div>
     <div class="cs-legend">{legend}</div>
@@ -836,7 +650,7 @@ def agent_cards(runs: list[dict], titles: dict) -> str:
         out.append(f"""<div class="cs-agent"><div class="icon"><i class="ph {AGENT_ICON[r['agent']]}"></i></div>
 <div><div class="title-4">{titles[r['agent']]}</div>
 <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px"><span class="cs-chip {status_cls}">{e(r['status'])}</span>
-<span class="cs-chip {'info' if r['mode'] == 'llm' else ''}">{mode}</span><span class="cs-chip">{r.get('duration_s', 0)}s</span>
+<span class="cs-chip">{mode}</span><span class="cs-chip">{r.get('duration_s', 0)}s</span>
 {'<span class="cs-chip ok">cache hit</span>' if r.get('cache') == 'hit' else ''}</div></div></div>""")
     return f'<div class="cs-agents">{"".join(out)}</div>'
 

@@ -120,11 +120,12 @@ Open the live app before you start presenting. Streamlit Cloud apps go to sleep,
 
 ## 7. The design story (if asked about the UI)
 
-* It is built only from the two skills in `elayadesign/ai-design-skills`, so it is our own look, not Team 24's.
-* **`figma-designer`:** Core Colors feed a semantic Color System with Dark and Light modes, one violet accent, 5 button types × 5 states, bento and zig-zag layouts, and contrast checks. The **Design system** tab shows the whole Foundations frame.
-* **`landing-page-design`:** flat black and grey surfaces with borders, a gradient hero heading, Geist type, Phosphor icons, one easing curve, skeleton loaders, empty states and a risk reversal block.
+* It follows the `elayadesign/ai-design-skills` landing page system:
+  * Geist type, a fixed spacing scale, Phosphor icons and one easing curve
+  * skeleton loaders, composed empty states and reduced motion support
+* It also borrows the glass and 3D layer from our Team 24 LaneRoom app: a navy base with aurora light, a grid floor, floating spheres and glass panels.
 * **The pipeline strip is the point.** It reads the checkpoint and shows which nodes finished, where the graph is waiting for a human, and which agents were skipped. The HITL design becomes visible to the reviewer.
-* **Violet accent, not orange,** because orange already means "high" severity in the reports. Reject uses the red Error button style.
+* **Teal accent, not orange,** because orange already means "high" severity in the reports.
 
 ## 8. Likely questions and answers
 

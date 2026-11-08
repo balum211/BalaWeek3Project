@@ -8,7 +8,7 @@ Before recording: delete `data/` once so the memory and cache start empty, and r
 
 ## 0:00 to 0:30 · Intro and the problem
 
-**Show:** the live app's hero: the gradient headline and the bento grid of results, then the sidebar showing **LLM agents on**.
+**Show:** the live app's hero: the 3D tilted report preview with the scan line, then the sidebar showing **LLM agents on**.
 
 **Say:** "Hi, I'm Bala. For Week 3 I built CodeSentinel, use case 3E, a multi agent code review system on the LangGraph code track. Code review takes 30 to 45 minutes per pull request, and security and test gaps are what get skipped under pressure. CodeSentinel runs three specialist agents in parallel, and nothing is posted or remembered until a human approves it."
 
@@ -56,4 +56,4 @@ Before recording: delete `data/` once so the memory and cache start empty, and r
 
 **Show:** `docs/PROJECT_DOCUMENTATION.md` section 4 and 5.
 
-**Say:** "I built this with Claude Code. I gave it all the Week 3 materials, and we iterated: turning single prompt agents into ReAct agents, adding the grounding guard, fixing duplicate findings and a JWT rule that double counted, and changing the scoring curve. The UI follows its own design system built from the ai-design-skills repo, which you can see in the Design system tab, and it is deployed publicly on Streamlit Cloud. The biggest lesson: control flow and human checkpoints are the product, and important rules belong in code. Thanks for watching."
+**Say:** "I built this with Claude Code. I gave it all the Week 3 materials, and we iterated: turning single prompt agents into ReAct agents, adding the grounding guard, fixing duplicate findings and a JWT rule that double counted, and changing the scoring curve. The UI follows the ai-design-skills design system with the glass and 3D layer from our team's LaneRoom app, and it is deployed publicly on Streamlit Cloud. The biggest lesson: control flow and human checkpoints are the product, and important rules belong in code. Thanks for watching."

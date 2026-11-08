@@ -63,6 +63,7 @@ FAQ = [
 st.set_page_config(page_title="CodeSentinel · multi agent code review", page_icon="🛡️", layout="wide",
                    initial_sidebar_state="auto")
 st.markdown(ui.CSS, unsafe_allow_html=True)
+st.markdown(ui.BACKGROUND, unsafe_allow_html=True)
 
 
 @st.cache_resource
@@ -265,7 +266,7 @@ def render_report_body(report: dict, review_mode: bool) -> dict[str, str]:
 
 
 # ------------------------------------------------------------------ workspace
-tab_review, tab_memory, tab_monitor, tab_arch, tab_design = st.tabs(["Review", "Team memory", "Monitor", "Architecture", "Design system"])
+tab_review, tab_memory, tab_monitor, tab_arch = st.tabs(["Review", "Team memory", "Monitor", "Architecture"])
 snap = snapshot()
 
 def pipeline_state(snap, intr) -> str | None:
@@ -310,7 +311,7 @@ with tab_review:
     elif intr and intr["type"] == "plan_review":
         plan = intr["plan"]
         st.markdown(f'<div class="cs-card"><div class="caption-3">Step 1 of 2 · Approve the plan</div>'
-                    f'<div class="heading-6" style="margin-top:8px"><i class="ph ph-strategy" style="color:var(--icon-info)"></i> '
+                    f'<div class="heading-6" style="margin-top:8px"><i class="ph ph-strategy" style="color:var(--accent)"></i> '
                     f'Risk {plan["risk_level"]} · planned by {html.escape(str(intr.get("planner")))}</div>'
                     f'<div class="body-6" style="margin-top:4px">{html.escape(plan["rationale"])}</div>'
                     f'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:12px">'
@@ -322,7 +323,7 @@ with tab_review:
         if c1.button("Approve plan", type="primary", disabled=not agents, icon=":material/check:"):
             run_stream(Command(resume={"approved": True, "agents": agents,
                                        "focus_areas": [x.strip() for x in focus.splitlines() if x.strip()]}))
-        if c2.button("Cancel run", type="tertiary"):
+        if c2.button("Cancel run"):
             run_stream(Command(resume={"approved": False}))
 
     elif intr and intr["type"] == "report_review":
@@ -330,7 +331,7 @@ with tab_review:
         st.markdown('<div class="caption-3" style="margin-bottom:12px">Step 2 of 2 · Review the report</div>', unsafe_allow_html=True)
         dismissed = render_report_body(report, review_mode=True)
         st.markdown('<div class="cs-card" style="margin-top:32px"><div class="heading-6">'
-                    '<i class="ph ph-lock-key" style="color:var(--icon-info)"></i> Approve actions</div>'
+                    '<i class="ph ph-lock-key" style="color:var(--accent)"></i> Approve actions</div>'
                     '<div class="body-6" style="margin-top:4px">These are the only steps that change anything. '
                     'Each one runs only if you tick it.</div></div>', unsafe_allow_html=True)
         a1 = st.checkbox("Save the report to the reports folder", value=True)
@@ -350,7 +351,7 @@ with tab_review:
             actions = [a for a, on in (("save_report", a1), ("post_github", a2), ("remember_feedback", a3)) if on]
             run_stream(Command(resume={"decision": "approve", "actions": actions, "dismissed": dismissed,
                                        "acknowledge_critical": ack, "reviewer": reviewer, "note": note}))
-        if b2.button("Reject report", key="reject_report", icon=":material/block:"):
+        if b2.button("Reject report"):
             run_stream(Command(resume={"decision": "reject"}))
 
     elif snap.next:
@@ -424,7 +425,7 @@ with tab_memory:
     if hist:
         df = pd.DataFrame([{"reviewed": datetime.fromtimestamp(h["created"]), "score": h["metadata"].get("score"),
                             "verdict": h["metadata"].get("verdict")} for h in hist])
-        st.line_chart(df, x="reviewed", y="score", height=220, color=ui.resolve("Primary/500"))
+        st.line_chart(df, x="reviewed", y="score", height=220, color="#2DD4BF")
         st.dataframe(df, hide_index=True, use_container_width=True)
     else:
         st.markdown('<div class="body-6">Approve a review with "Remember my feedback" to start the trend line.</div>',
@@ -443,7 +444,7 @@ with tab_monitor:
                      f'<div class="num" style="margin-top:8px">{s["hit_rate"] * 100:.0f}%</div>'
                      f'<div class="caption-5">{s["hits"]} hits · {s["misses"]} misses · {s["entries"]} entries</div></div>')
     st.markdown(f'<div class="cs-grid-3" style="margin-top:0">{"".join(cards)}</div>', unsafe_allow_html=True)
-    if st.button("Clear caches", key="clear_caches"):
+    if st.button("Clear caches"):
         get_cache().clear()
         st.rerun()
     if snap is None:
@@ -491,11 +492,6 @@ with tab_arch:
         st.code(graph.get_graph().draw_mermaid(), language="text")
 
 
-# ------------------------------------------------------------------ design system tab (figma-designer Foundations)
-with tab_design:
-    st.markdown(ui.foundations(), unsafe_allow_html=True)
-
-
 # ------------------------------------------------------------------ closing sections
 st.markdown(ui.tagline(), unsafe_allow_html=True)
 st.markdown(ui.benefits(), unsafe_allow_html=True)
@@ -503,11 +499,10 @@ st.markdown(ui.section_head("faq", "ph-question", "FAQ", "Questions reviewers as
 for q, a in FAQ:
     with st.expander(q):
         st.markdown(a)
-st.markdown(ui.risk_reversal(), unsafe_allow_html=True)
 st.markdown("""
 <section class="cs-section cs-reveal" style="text-align:center">
-  <h2 class="title heading-3" style="margin:0 auto 8px auto">Run your first review in under a minute</h2>
+  <h2 class="title" style="margin:0 auto 8px auto">Run your first review in under a minute</h2>
   <div class="body-3" style="margin:0 auto;max-width:680px">Start with a sample service, then try your own code or a public pull request.</div>
-  <div class="cs-actions" style="justify-content:center"><a class="cs-b t-primary" href="#workspace"><i class="ph ph-play"></i>Run a free review</a></div>
+  <div class="cs-actions" style="justify-content:center"><a class="cs-btn primary" href="#workspace"><i class="ph ph-play"></i>Run a free review</a></div>
 </section>""", unsafe_allow_html=True)
 st.markdown(ui.footer(REPO_URL), unsafe_allow_html=True)
