@@ -24,7 +24,7 @@ from codesentinel.models import AGENT_TITLES
 from codesentinel.tools.github_tools import GitHubError, fetch_files, parse_source_url
 
 ROOT = Path(__file__).resolve().parent
-REPO_URL = "https://github.com/balum211/BalaWeek3Project"
+REPO_URL = "https://github.com/balum211/BalaWeek3-CodeSentinel"
 SAMPLES = {
     "Loyalty portal API (Flask)": "flask_user_api",
     "Inventory sync pipeline": "inventory_pipeline",

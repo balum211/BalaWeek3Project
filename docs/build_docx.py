@@ -12,14 +12,27 @@ from pathlib import Path
 
 from docx import Document
 from docx.enum.table import WD_TABLE_ALIGNMENT
+from docx.opc.constants import RELATIONSHIP_TYPE as RT
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
+from docx.text.run import Run
 
 HERE = Path(__file__).resolve().parent
 SRC = HERE / "PROJECT_DOCUMENTATION.md"
 OUT = HERE / "CodeSentinel_Week3_Project_Documentation.docx"
-INLINE = re.compile(r"(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)]+\))")
+INLINE = re.compile(r"(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)]+\)|https?://[^\s|)`*]*[^\s|)`*.,;:])")
+
+
+def add_link(par, text: str, url: str):
+    r = par.add_run(text)
+    r.underline = True
+    r.font.color.rgb = RGBColor(0x05, 0x63, 0xC1)
+    link = OxmlElement("w:hyperlink")
+    link.set(qn("r:id"), par.part.relate_to(url, RT.HYPERLINK, is_external=True))
+    link.append(r._r)
+    par._p.append(link)
+    return r
 
 
 def add_inline(par, text: str, bold: bool = False):
@@ -36,8 +49,9 @@ def add_inline(par, text: str, bold: bool = False):
             r.font.color.rgb = RGBColor(0x1F, 0x6F, 0x50)
         elif part.startswith("["):
             m = re.match(r"\[([^\]]+)\]\(([^)]+)\)", part)
-            r = par.add_run(m.group(1))
-            r.underline = True
+            r = add_link(par, m.group(1), m.group(2))
+        elif part.startswith("http"):
+            r = add_link(par, part, part)
         else:
             r = par.add_run(part)
         if bold:
@@ -93,8 +107,8 @@ def build():
                     cell.text = ""
                     add_inline(cell.paragraphs[0], val, bold=r_idx == 0)
                     for par in cell.paragraphs:
-                        for run in par.runs:
-                            run.font.size = Pt(9.5)
+                        for el in par._p.iter(qn("w:r")):
+                            Run(el, par).font.size = Pt(9.5)
                     if r_idx == 0:
                         shade(cell, "E8F5EE")
             doc.add_paragraph()

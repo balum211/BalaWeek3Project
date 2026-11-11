@@ -4,18 +4,18 @@ Submission form: https://forms.gle/waBYFkkf5xxmcouV9 · Final certification dead
 
 | Deliverable | What to submit | Where it is |
 |---|---|---|
-| Code base | GitHub link | https://github.com/balum211/BalaWeek3Project |
+| Code base | GitHub link | https://github.com/balum211/BalaWeek3-CodeSentinel |
 | Live app | Public Streamlit link | https://balaweek3project-codesentinel.streamlit.app/ |
 | Project documentation (Google Doc) | Upload `docs/CodeSentinel_Week3_Project_Documentation.docx` to Google Drive, open it with Google Docs, set sharing to "Anyone with the link can view", paste the link | `docs/CodeSentinel_Week3_Project_Documentation.docx` (Markdown source: `docs/PROJECT_DOCUMENTATION.md`) |
-| Video demo (5 minutes or less) | Record with Loom following the script, paste the share link | `docs/DEMO_VIDEO_SCRIPT.md` |
+| Video demo (5 minutes or less) | Loom share link | https://www.loom.com/share/86fd99ac8150461589b81be3cfcc7564 |
 | Sample output | Included in the repo | `sample_outputs/`, `evals/results.md` |
 
 ## Form answers you can reuse (links)
 
-* GitHub: https://github.com/balum211/BalaWeek3Project
+* GitHub: https://github.com/balum211/BalaWeek3-CodeSentinel
 * Live app: https://balaweek3project-codesentinel.streamlit.app/
 * Google Doc: upload `CodeSentinel_Week3_Project_Documentation.docx`, open with Google Docs, share as "Anyone with the link can view"
-* Video: your Loom link (5 minutes or less)
+* Video: https://www.loom.com/share/86fd99ac8150461589b81be3cfcc7564
 
 ## Before recording the demo
 

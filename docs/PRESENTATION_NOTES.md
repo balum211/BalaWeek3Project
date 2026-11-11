@@ -3,7 +3,8 @@
 **Presenter:** Bala · **Program:** Mastering Agentic AI, Week 3 · **Use case:** 3E, Code Review Agent (multi agent, code track)
 
 **Live app:** https://balaweek3project-codesentinel.streamlit.app/
-**Code:** https://github.com/balum211/BalaWeek3Project
+**Code:** https://github.com/balum211/BalaWeek3-CodeSentinel
+**Demo video:** https://www.loom.com/share/86fd99ac8150461589b81be3cfcc7564
 
 ## 1. The 30 second pitch
 

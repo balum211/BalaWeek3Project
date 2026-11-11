@@ -4,8 +4,9 @@
 **Program:** Mastering Agentic AI Certification, Week 3: Agentic AI Systems
 **Use case:** 3E, Code Review Agent
 **Build track:** Track 2, code heavy with LangChain + LangGraph, Streamlit interface
-**Repository:** https://github.com/balum211/BalaWeek3Project
+**Repository:** https://github.com/balum211/BalaWeek3-CodeSentinel
 **Live app:** https://balaweek3project-codesentinel.streamlit.app/
+**Demo video:** https://www.loom.com/share/86fd99ac8150461589b81be3cfcc7564
 
 ## 1. Project overview
 
@@ -73,7 +74,7 @@ I built the project with **Claude Code** (Claude Opus, in the Claude desktop app
 
 The main prompt:
 
-> I am giving all resources which I learned from Week3, can you go through all materials and create a project for me to submit for Week3. [links to the Session 1 and 2 GitHub repos, NotebookLM, glossary, Mem0, caching, A2A, HITL vs HOTL and agent memory handouts, live session handouts, office hours, project handout] Can you go through and create good project for my submissions along with code, materials and Documents to submit. Use https://github.com/elayadesign/ai-design-skills for Streamlit application and Push Code to Github https://github.com/balum211/BalaWeek3Project and also store final code & documents for submission in my Local desktop directory.
+> I am giving all resources which I learned from Week3, can you go through all materials and create a project for me to submit for Week3. [links to the Session 1 and 2 GitHub repos, NotebookLM, glossary, Mem0, caching, A2A, HITL vs HOTL and agent memory handouts, live session handouts, office hours, project handout] Can you go through and create good project for my submissions along with code, materials and Documents to submit. Use https://github.com/elayadesign/ai-design-skills for Streamlit application and Push Code to Github https://github.com/balum211/BalaWeek3-CodeSentinel and also store final code & documents for submission in my Local desktop directory.
 
 From that prompt, Claude Code worked through the build plan below, which I reviewed. Each step is written as a reusable prompt, in the order it shaped the build:
 
